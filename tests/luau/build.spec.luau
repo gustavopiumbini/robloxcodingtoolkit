@@ -129,7 +129,8 @@ test("audit flags coplanar overlapping faces with different looks", function()
 	expect(#report.zFighting == 1, `expected 1 z-fight, got {#report.zFighting}`)
 	expect(report.parts == 2)
 	-- Raised by 0.02: fixed.
-	(root:FindFirstChild("Tile") :: any).Position = roblox.Vector3.new(0, 0.77, 0)
+	local tile = root:FindFirstChild("Tile") :: any
+	tile.Position = roblox.Vector3.new(0, 0.77, 0)
 	expect(#B.audit(root).zFighting == 0)
 end)
 

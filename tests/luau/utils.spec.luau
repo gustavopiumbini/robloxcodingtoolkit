@@ -5,7 +5,8 @@
 local process = require("@lune/process")
 
 -- Roblox exposes `task` as a global; Lune exposes it as a library.
-(_G :: any).task = require("@lune/task")
+local G = _G :: any
+G.task = require("@lune/task")
 
 local Guard = require("../../template/src/shared/Util/Guard")
 local RateLimiter = require("../../template/src/shared/Util/RateLimiter")
