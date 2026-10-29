@@ -84,7 +84,7 @@ end
 
 function Signal.Fire(self: any, ...: any)
 	-- Copia a lista para que conectar/desconectar durante o Fire seja seguro.
-	local snapshot = table.clone(self._handlers)
+	local snapshot: { any } = table.clone(self._handlers)
 	for _, connection in snapshot do
 		if connection.Connected then
 			task.spawn(connection._handler, ...)

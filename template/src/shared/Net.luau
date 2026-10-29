@@ -43,37 +43,40 @@ local function getFolder(): Folder
 	if folder then
 		return folder
 	end
+	local result: Folder
 	if IS_SERVER then
 		local existing = ReplicatedStorage:FindFirstChild(FOLDER_NAME)
 		if existing and existing:IsA("Folder") then
-			folder = existing
+			result = existing
 		else
-			local created = Instance.new("Folder")
-			created.Name = FOLDER_NAME
-			created.Parent = ReplicatedStorage
-			folder = created
+			result = Instance.new("Folder")
+			result.Name = FOLDER_NAME
+			result.Parent = ReplicatedStorage
 		end
 	else
-		folder = ReplicatedStorage:WaitForChild(FOLDER_NAME, WAIT_TIMEOUT) :: Folder
-		assert(folder, "Net: pasta Remotes não encontrada (o servidor carregou?)")
+		local found = ReplicatedStorage:WaitForChild(FOLDER_NAME, WAIT_TIMEOUT)
+		assert(found and found:IsA("Folder"), "Net: Remotes folder not found (did the server load?)")
+		result = found
 	end
-	return folder :: Folder
+	folder = result
+	return result
 end
 
 local function getRemote(name: string, className: string): any
 	local parent = getFolder()
+	local remote: Instance?
 	if IS_SERVER then
-		local remote = parent:FindFirstChild(name)
-		if not remote then
-			remote = Instance.new(className)
-			remote.Name = name
-			remote.Parent = parent
+		remote = parent:FindFirstChild(name)
+		if remote == nil then
+			local created: any = Instance.new(className :: any)
+			created.Name = name
+			created.Parent = parent
+			remote = created
 		end
-		assert(remote:IsA(className), `Net: {name} já existe como {remote.ClassName}`)
-		return remote
+	else
+		remote = parent:WaitForChild(name, WAIT_TIMEOUT)
 	end
-	local remote = parent:WaitForChild(name, WAIT_TIMEOUT)
-	assert(remote, `Net: remote {name} não encontrado`)
+	assert(remote and remote:IsA(className), `Net: remote {name} missing or not a {className}`)
 	return remote
 end
 
