@@ -51,4 +51,6 @@ jobs:
         run: selene src
 
       - name: Lune unit tests
-        run: lune run tests/luau/utils.spec.luau
+        run: |
+          lune run tests/luau/utils.spec.luau
+          lune run tests/luau/build.spec.luau
