@@ -5,6 +5,7 @@
 //   rbxkit install [pasta]           instala skills/AGENTS.md num projeto existente
 //   rbxkit new <tipo> <Nome>         gera service | controller | module
 //   rbxkit check [caminhos...]       lint específico de Roblox
+//   rbxkit docs <pergunta>           busca na documentação oficial da Roblox
 //   rbxkit mcp                       mostra como conectar o MCP do Roblox Studio
 //   rbxkit doctor                    confere ferramentas instaladas
 
@@ -87,7 +88,7 @@ function parseArgs(argv) {
 		if (arg.startsWith("--")) {
 			const [key, inline] = arg.slice(2).split("=", 2);
 			if (inline !== undefined) flags[key] = inline;
-			else if (argv[i + 1] && !argv[i + 1].startsWith("--") && ["name", "client", "os"].includes(key)) flags[key] = argv[++i];
+			else if (argv[i + 1] && !argv[i + 1].startsWith("--") && ["name", "client", "os", "api", "deprecated", "limit"].includes(key)) flags[key] = argv[++i];
 			else flags[key] = true;
 		} else {
 			positional.push(arg);
@@ -553,6 +554,103 @@ function cmdInit({ positional, flags }) {
 }
 
 // ---------------------------------------------------------------------------
+// docs: consulta a documentação oficial (create.roblox.com) em Markdown
+
+const DOCS_BASE = "https://create.roblox.com";
+const API_KINDS = ["classes", "datatypes", "enums", "libraries", "globals"];
+
+async function fetchText(url) {
+	let response;
+	try {
+		response = await fetch(url, { headers: { Accept: "text/markdown, application/json" } });
+	} catch (err) {
+		throw new UsageError(`sem acesso a ${DOCS_BASE} (${err.cause?.code ?? err.message})`);
+	}
+	return { status: response.status, text: await response.text() };
+}
+
+// Títulos de membro variam por tipo de página: "### Method: TweenService:Create",
+// "### task.wait", "### CFrame.new" (um por overload), "### assert".
+const MEMBER_HEADING = /^###\s+(?!From\s)(?:\w+:\s+)?(\S+)\s*$/;
+
+// Todas as seções do membro (overloads incluídos), até o próximo "##"/"###".
+export function extractMember(markdown, member) {
+	const lines = markdown.split("\n");
+	const sections = [];
+	for (let start = 0; start < lines.length; start++) {
+		const m = MEMBER_HEADING.exec(lines[start]);
+		if (!m || m[1].split(/[.:]/).pop() !== member) continue;
+		let end = lines.findIndex((l, i) => i > start && /^#{2,3}\s/.test(l));
+		if (end === -1) end = lines.length;
+		sections.push(lines.slice(start, end).join("\n").trim());
+		start = end - 1;
+	}
+	return sections.length ? sections.join("\n\n") : null;
+}
+
+export function listMembers(markdown) {
+	const names = markdown
+		.split("\n")
+		.filter((l) => MEMBER_HEADING.test(l))
+		.map((l) => l.replace(/^###\s+/, "").trim());
+	return [...new Set(names)];
+}
+
+function pageOverview(markdown, maxLines = 60) {
+	const body = markdown.replace(/^<!--.*?-->\s*/s, "").replace(/^---\n[\s\S]*?\n---\n/, "");
+	const lines = body.split("\n");
+	const methodsAt = lines.findIndex((l) => /^## (Code Samples|Properties|Methods|Events|Callbacks|Functions|Constructors)/.test(l));
+	const intro = lines.slice(0, methodsAt === -1 ? maxLines : Math.min(methodsAt, maxLines)).join("\n").trim();
+	const members = listMembers(markdown);
+	return members.length ? `${intro}\n\nMembros:\n${members.map((m) => `  - ${m}`).join("\n")}` : intro;
+}
+
+async function cmdDocs({ positional, flags }) {
+	if (flags.deprecated) {
+		const name = typeof flags.deprecated === "string" ? flags.deprecated : positional.join(" ");
+		if (!name) throw new UsageError("uso: rbxkit docs --deprecated <Classe ou membro>");
+		const { text } = await fetchText(`${DOCS_BASE}/docs/reference/engine/deprecated.md`);
+		const rows = text.split("\n").filter((l) => l.startsWith("|") && l.toLowerCase().includes(name.toLowerCase()));
+		console.log(rows.length ? ["| Classe | Membro | Substituto | Nota |", ...rows].join("\n") : `nada depreciado contendo "${name}"`);
+		return 0;
+	}
+
+	if (flags.api) {
+		const target = typeof flags.api === "string" ? flags.api : positional[0];
+		const match = /^([A-Za-z_][\w]*)(?:[.:]([A-Za-z_]\w*))?$/.exec(target ?? "");
+		if (!match) throw new UsageError("uso: rbxkit docs --api TweenService | TweenService:Create | task.wait | CFrame.lookAt");
+		const [, name, member] = match;
+		for (const kind of API_KINDS) {
+			const url = `${DOCS_BASE}/docs/reference/engine/${kind}/${name}.md`;
+			const { status, text } = await fetchText(url);
+			if (status !== 200) continue;
+			if (flags.raw) console.log(text);
+			else if (member) {
+				const section = extractMember(text, member);
+				console.log(section ?? `membro "${member}" não encontrado em ${name}. Membros:\n${listMembers(text).map((m) => `  - ${m}`).join("\n")}`);
+			} else console.log(pageOverview(text));
+			console.log(color.dim(`\nFonte: ${url.replace(/\.md$/, "")}`));
+			return 0;
+		}
+		console.log(`"${name}" não é classe, datatype, enum, library ou global. Tente: rbxkit docs "${target}"`);
+		return 1;
+	}
+
+	const query = positional.join(" ").trim();
+	if (!query) throw new UsageError('uso: rbxkit docs "pergunta em linguagem natural" | --api Nome[:membro] | --deprecated Nome');
+	const { text } = await fetchText(`${DOCS_BASE}/docs/api/search?q=${encodeURIComponent(query)}`);
+	const data = JSON.parse(text);
+	if (data.error) throw new UsageError(data.error);
+	const limit = Number(flags.limit) || 8;
+	for (const r of (data.results ?? []).slice(0, limit)) {
+		console.log(`${r.title} [${r.type}]\n  ${r.url}\n  ${String(r.summary ?? "").trim().split("\n")[0]}`);
+	}
+	if (!data.results?.length) console.log("nenhum resultado");
+	console.log(color.dim("\nLeia uma página: curl -s <url>  (já está em Markdown)  |  API: rbxkit docs --api Classe:membro"));
+	return 0;
+}
+
+// ---------------------------------------------------------------------------
 // mcp / doctor
 
 const MCP_COMMANDS = {
@@ -650,15 +748,18 @@ Uso:
   rbxkit new module <Pasta/Nome>          src/shared/<Pasta>/<Nome>.luau
   rbxkit check [caminhos] [--json] [--strict] [--quiet]
                                           lint de Roblox (erro -> exit 1; --strict inclui avisos)
+  rbxkit docs "<pergunta>" [--limit N]   busca na documentação oficial (create.roblox.com)
+  rbxkit docs --api Classe[:membro]       referência de API (ex.: TweenService:Create, task.wait)
+  rbxkit docs --deprecated <Nome>         APIs depreciadas e seus substitutos
   rbxkit mcp [--client claude|codex] [--os windows|mac] [--write]
                                           como conectar o MCP do Roblox Studio (--write cria .mcp.json)
   rbxkit doctor                           confere ferramentas instaladas
 `;
 
-export function main(argv) {
+export async function main(argv) {
 	const [command, ...rest] = argv;
 	const args = parseArgs(rest);
-	const commands = { init: cmdInit, install: cmdInstall, new: cmdNew, check: cmdCheck, mcp: cmdMcp, doctor: cmdDoctor };
+	const commands = { init: cmdInit, install: cmdInstall, new: cmdNew, check: cmdCheck, docs: cmdDocs, mcp: cmdMcp, doctor: cmdDoctor };
 	if (!command || command === "help" || command === "--help" || command === "-h") {
 		console.log(HELP);
 		return 0;
@@ -669,7 +770,7 @@ export function main(argv) {
 		return 2;
 	}
 	try {
-		return handler(args);
+		return await handler(args);
 	} catch (err) {
 		if (err instanceof UsageError) {
 			console.error(color.red(`erro: ${err.message}`));
@@ -680,5 +781,5 @@ export function main(argv) {
 }
 
 if (process.argv[1] && pathToFileURL(fs.realpathSync(process.argv[1])).href === pathToFileURL(SELF).href) {
-	process.exitCode = main(process.argv.slice(2));
+	process.exitCode = await main(process.argv.slice(2));
 }

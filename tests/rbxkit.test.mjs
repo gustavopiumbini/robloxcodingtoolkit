@@ -151,3 +151,24 @@ test("toda skill tem frontmatter com name igual à pasta e description", () => {
 		assert.match(fm[1], /^description: .{40,}$/m);
 	}
 });
+
+test("docs: extrai seções de membros nos formatos das páginas da Roblox", async () => {
+	const { extractMember, listMembers } = await import("../tools/rbxkit.mjs");
+	const page = [
+		"# Class: TweenService",
+		"## Methods",
+		"### Method: TweenService:Create",
+		"cria tween",
+		"### Method: TweenService:GetValue",
+		"valor",
+		"## Inherited Members",
+		"### From [Instance](/x.md)",
+	].join("\n");
+	assert.equal(extractMember(page, "Create"), "### Method: TweenService:Create\ncria tween");
+	assert.equal(extractMember(page, "Nope"), null);
+	assert.deepEqual(listMembers(page), ["Method: TweenService:Create", "Method: TweenService:GetValue"]);
+
+	const overloads = "## Constructors\n### CFrame.new\na\n### CFrame.new\nb\n### CFrame.lookAt\nc";
+	assert.equal(extractMember(overloads, "new"), "### CFrame.new\na\n\n### CFrame.new\nb");
+	assert.equal(extractMember("## Functions\n### task.wait\nyield", "wait"), "### task.wait\nyield");
+});

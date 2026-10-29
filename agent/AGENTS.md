@@ -27,6 +27,8 @@ node tools/rbxkit.mjs check                 # lint específico de Roblox (rode S
 node tools/rbxkit.mjs new service Nome      # gera src/server/Services/NomeService.luau
 node tools/rbxkit.mjs new controller Nome   # gera src/client/Controllers/NomeController.luau
 node tools/rbxkit.mjs new module Pasta/Nome # gera src/shared/Pasta/Nome.luau
+node tools/rbxkit.mjs docs --api Classe:membro  # referência oficial de uma API (ex.: TweenService:Create)
+node tools/rbxkit.mjs docs "pergunta em inglês" # busca na documentação oficial
 node tools/rbxkit.mjs mcp                   # mostra como conectar o MCP do Roblox Studio
 rokit install                               # instala rojo, selene, stylua, luau-lsp
 rojo serve                                  # sincroniza com o Studio (plugin Rojo)
@@ -51,6 +53,21 @@ Leia a skill relevante antes de começar (em `.claude/skills/` e `.agents/skills
 | `roblox-studio-mcp` | Testar/inspecionar no Studio pelo MCP |
 | `roblox-debug` | Erros e "não funciona" |
 | `roblox-review` | Auditoria/revisão de código |
+| `roblox-docs` | Conferir qualquer API na documentação oficial antes de usar |
+| `roblox-testing` | Testes (Jest Lua, Lune), QA, playtests com vários clientes |
+| `roblox-characters-animation` | Humanoid, spawn, aparência, animações, ferramentas |
+| `roblox-input` | Teclado/mouse, touch, gamepad, câmera customizada |
+| `roblox-physics` | Raycasts/spatial queries, constraints, network ownership |
+| `roblox-npc-ai` | Pathfinding, máquinas de estado, muitos NPCs |
+| `roblox-audio` | Música e efeitos (Audio API) |
+| `roblox-text-chat` | TextChatService, filtragem obrigatória de texto, PolicyService |
+| `roblox-teleport-matchmaking` | Vários places, lobby -> partida, servidores reservados |
+| `roblox-world-building` | Construir mapa por código, iluminação, terreno |
+| `roblox-open-cloud` | APIs REST, HttpService, webhooks, publicação |
+| `roblox-tooling` | Rokit, Rojo, Wally, Selene, StyLua, luau-lsp, CI |
+| `roblox-creator-store-security-audit` | Auditar modelos da Toolbox/Creator Store (backdoors) |
+
+Se uma skill e o template divergirem (ex.: ProfileStore vs. `DataService`, nomes de pastas), **siga o padrão do template** já usado no projeto, a menos que o usuário peça para mudar. Se a documentação oficial (`roblox-docs`) contradizer uma skill, a documentação vence.
 
 ## Definição de pronto
 

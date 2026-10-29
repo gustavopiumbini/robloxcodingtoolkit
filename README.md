@@ -8,7 +8,7 @@ Você descreve o que quer ("faz uma loja com espada e escudo", "cria um obby com
 
 | Parte | O que é |
 |---|---|
-| `skills/` | 12 **skills** (formato `SKILL.md`, funcionam no Claude Code e no Codex) com o conhecimento de Roblox que o agente consulta |
+| `skills/` | 25 **skills** (formato `SKILL.md`, funcionam no Claude Code e no Codex) com o conhecimento de Roblox que o agente consulta |
 | `template/` | Projeto **Rojo** pronto: bootstraps de servidor/cliente, `DataService` com session lock, `Net` + `Guard` + `RateLimiter` para remotes seguros, `Signal`, `Trove`, exemplo de loja e HUD |
 | `agent/` | `AGENTS.md` (lido pelo Codex e outros) e `CLAUDE.md` (Claude Code) com as regras do projeto |
 | `tools/rbxkit.mjs` | CLI sem dependências: cria projetos, gera services/controllers, **lint específico de Roblox**, configuração do MCP do Studio |
@@ -29,6 +29,26 @@ Você descreve o que quer ("faz uma loja com espada e escudo", "cria um obby com
 | `roblox-studio-mcp` | Usar o MCP do Studio: play test, Output, `execute_luau`, screenshots |
 | `roblox-debug` | Interpretar erros do Output e achar a causa |
 | `roblox-review` | Auditoria de segurança/dados/performance antes de publicar |
+| `roblox-docs` | Consulta a documentação oficial da Roblox antes de usar uma API (via `rbxkit docs`) |
+
+Skills de terceiros (MIT, veja [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)):
+
+| Skill | Para quê | Origem |
+|---|---|---|
+| `roblox-testing` | Jest Lua, Lune, testes no Open Cloud, QA com vários clientes | [EL4CTEO](https://github.com/EL4CTEO/roblox-skills) |
+| `roblox-characters-animation` | Humanoid, spawn, aparência, animações, ferramentas | EL4CTEO |
+| `roblox-input` | Input Action System, UserInputService, câmeras | EL4CTEO |
+| `roblox-physics` | Spatial queries, constraints, network ownership | EL4CTEO |
+| `roblox-npc-ai` | Pathfinding, máquinas de estado, escala | EL4CTEO |
+| `roblox-audio` | Audio API, música, som 3D | EL4CTEO |
+| `roblox-text-chat` | TextChatService, filtragem de texto, PolicyService | EL4CTEO |
+| `roblox-teleport-matchmaking` | Vários places, servidores reservados, matchmaking | EL4CTEO |
+| `roblox-world-building` | Mapas por código, iluminação, terreno | EL4CTEO |
+| `roblox-open-cloud` | APIs REST, HttpService, webhooks, Secrets | EL4CTEO |
+| `roblox-tooling` | Rokit, Rojo, Wally, luau-lsp, CI | EL4CTEO |
+| `roblox-creator-store-security-audit` | Auditoria de modelos da Toolbox (backdoors) | [AshExplained](https://github.com/AshExplained/roblox-skills) |
+
+Outras coleções que avaliamos e você pode instalar à parte: [Roblox/roblox-studio-agent-plugin](https://github.com/Roblox/roblox-studio-agent-plugin) (plugin oficial de conexão com o Studio), [nonlooped/roblox-suite](https://github.com/nonlooped/roblox-suite), [AshExplained/roblox-skills](https://github.com/AshExplained/roblox-skills) (design, economia, live ops) e [m4bwav/roblox-agent](https://github.com/m4bwav/roblox-agent).
 
 ## Começando
 
@@ -104,6 +124,9 @@ new service <Nome>                  src/server/Services/<Nome>Service.luau
 new controller <Nome>               src/client/Controllers/<Nome>Controller.luau
 new module <Pasta/Nome>             src/shared/<Pasta>/<Nome>.luau
 check [caminhos] [--json] [--strict] [--quiet]
+docs "<pergunta em inglês>"         busca na documentação oficial da Roblox
+docs --api Classe[:membro]          referência de API (TweenService:Create, task.wait, CFrame.new)
+docs --deprecated <Nome>            está depreciado? qual o substituto?
 mcp [--client claude|codex] [--os windows|mac] [--write]
 doctor                              confere rojo/selene/stylua/claude/codex instalados
 ```

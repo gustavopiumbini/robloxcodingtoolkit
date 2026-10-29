@@ -7,10 +7,11 @@
     "rbxkit": "tools/rbxkit.mjs"
   },
   "files": [
-    "tools",
+    "THIRD_PARTY_NOTICES.md",
+    "agent",
     "skills",
     "template",
-    "agent"
+    "tools"
   ],
   "scripts": {
     "test": "node --test tests/*.test.mjs",
@@ -19,6 +20,14 @@
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["roblox", "luau", "rojo", "claude-code", "codex", "agent-skills", "mcp"],
+  "keywords": [
+    "roblox",
+    "luau",
+    "rojo",
+    "claude-code",
+    "codex",
+    "agent-skills",
+    "mcp"
+  ],
   "license": "MIT"
 }
