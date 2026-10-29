@@ -189,3 +189,13 @@ test("token budget: always-loaded context and skill sizes stay lean", () => {
 	}
 	assert.ok(descriptions <= 1800, `skill descriptions total ~${descriptions} tokens (budget 1800)`);
 });
+
+test("README: local links/images exist and one-prompt URLs point to real files", () => {
+	const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
+	const local = [...readme.matchAll(/(?:src|href)="([^"#:]+)"|\]\(([^)#:\s]+)\)/g)].map((m) => m[1] ?? m[2]);
+	assert.ok(local.length > 5);
+	for (const link of local) assert.ok(fs.existsSync(path.join(ROOT, link)), `broken README link: ${link}`);
+	const raw = [...readme.matchAll(/raw\.githubusercontent\.com\/gustavopiumbini\/robloxcodingtoolkit\/main\/(\S+\.md)/g)].map((m) => m[1]);
+	assert.ok(raw.length >= 2);
+	for (const file of raw) assert.ok(fs.existsSync(path.join(ROOT, file)), `one-prompt file missing: ${file}`);
+});

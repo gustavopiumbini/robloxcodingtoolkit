@@ -9,7 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="#-quick-start"><b>QUICK START →</b></a> ·
+  <a href="#-one-prompt-setup"><b>ONE-PROMPT SETUP →</b></a> ·
+  <a href="#-quick-start">QUICK START</a> ·
   <a href="#-connect-roblox-studio">CONNECT STUDIO</a> ·
   <a href="#-whats-inside">WHAT'S INSIDE</a> ·
   <a href="#-3d-building-that-looks-good">3D BUILDING</a> ·
@@ -33,8 +34,8 @@
 
 | Your situation | Path | What you get |
 |---|---|---|
-| **I have a game idea** | [Start a new game](#1-create-a-game) | Rojo project, secure networking and data modules, 3D build tools, 26 skills, agent rules |
-| **I already have a project** | [Add the toolkit](#existing-project) | Skills + `AGENTS.md` + `rbxkit` in your repo, nothing overwritten |
+| **I have a game idea** | [One prompt](#-one-prompt-setup) · [manual](#1-create-a-game) | Rojo project, secure networking and data modules, 3D build tools, 26 skills, agent rules |
+| **I already have a project** | [One prompt](#existing-project-one-prompt) · [manual](#existing-project) | Skills + `AGENTS.md` + `rbxkit` in your repo, nothing overwritten |
 | **I want the agent inside Studio** | [Connect Studio MCP](#-connect-roblox-studio) | Your agent can play test, read Output, run Luau and take screenshots |
 
 <p align="center">
@@ -42,6 +43,51 @@
 </p>
 
 You describe the goal in plain language — *"add a shop with a sword and a shield"*, *"build a medieval tavern"*, *"make an obby with 10 checkpoints"*. The agent loads only the skills it needs, plans the client/server split, writes strict Luau on top of battle-tested modules, builds geometry in Studio, then **proves it works**: lint, type check, play test, screenshots.
+
+---
+
+## 🚀 One-prompt setup
+
+Open **Claude Code** or **Codex** in an empty folder and paste two lines. Replace the second line with your game:
+
+```text
+Read https://raw.githubusercontent.com/gustavopiumbini/robloxcodingtoolkit/main/docs/prompts/new-game.md and follow it.
+Game: [name, genre, core loop, look & feel, monetization, target devices]
+```
+
+Example:
+
+```text
+Read https://raw.githubusercontent.com/gustavopiumbini/robloxcodingtoolkit/main/docs/prompts/new-game.md and follow it.
+Game: "Candy Tycoon" — players own a candy factory, buy droppers and conveyors with coins, upgrade
+machines, and rebirth for multipliers. Bright cartoon candy style, mobile-first, VIP game pass with 2x coins.
+```
+
+The agent then does everything in one go:
+
+| Step | What the agent does |
+|---|---|
+| **1 / Inspect** | Checks OS, Node, Rokit, Rojo, Roblox Studio and Studio MCP — asks you **once** before installing what's missing |
+| **2 / Project** | Creates the game with `rbxkit init` (template, 26 skills, `AGENTS.md`) |
+| **3 / Toolchain** | `rokit install`, `rojo plugin install`, `rbxkit doctor` |
+| **4 / Studio** | Starts `rojo serve` and tells you the 2 clicks to connect Rojo and Studio MCP |
+| **5 / Game** | Designs the core loop, then builds servers, remotes, saved data, UI, map and props with the skills |
+| **6 / Verify** | Lint, `rojo build`, play test in Studio with zero Output errors, screenshots — then a hand-over with next prompts |
+
+If the agent has to restart (for example after you turn on Studio MCP), just say **"continue Roblox setup"**: every step detects what's already done.
+
+<a id="existing-project-one-prompt"></a>
+**Existing project?** Open the agent at your project root:
+
+```text
+Read https://raw.githubusercontent.com/gustavopiumbini/robloxcodingtoolkit/main/docs/prompts/existing-project.md and follow it.
+Task: [optional — e.g. "audit everything before I publish" or "add a daily reward"]
+```
+
+It installs the toolkit without overwriting your files, adapts `AGENTS.md` to your layout and frameworks, runs a baseline audit and then does the task.
+
+> [!TIP]
+> If your agent can't open URLs (some Codex sandboxes block network), run `curl -sL <url>` yourself and paste the file, or clone this repo and point the agent at `docs/prompts/`.
 
 ---
 
