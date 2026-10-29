@@ -1,0 +1,24 @@
+{
+  "name": "rbxkit",
+  "version": "0.1.0",
+  "description": "Roblox Vibe Coding Toolkit: skills, template Rojo e CLI para usar Claude Code e Codex no Roblox Studio",
+  "type": "module",
+  "bin": {
+    "rbxkit": "tools/rbxkit.mjs"
+  },
+  "files": [
+    "tools",
+    "skills",
+    "template",
+    "agent"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check:template": "node tools/rbxkit.mjs check --strict template/src"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["roblox", "luau", "rojo", "claude-code", "codex", "agent-skills", "mcp"],
+  "license": "MIT"
+}

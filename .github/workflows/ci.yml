@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: npm run check:template
+
+  luau:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Lune e Selene
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/bin"
+          curl -sSfL -o lune.zip https://github.com/lune-org/lune/releases/download/v0.11.1/lune-0.11.1-linux-x86_64.zip
+          curl -sSfL -o selene.zip https://github.com/Kampfkarren/selene/releases/download/0.32.0/selene-0.32.0-linux.zip
+          for z in lune selene; do unzip -o "$z.zip" -d "$HOME/bin"; done
+          chmod +x "$HOME/bin"/*
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Testes dos módulos Luau
+        run: lune run tests/luau/utils.spec.luau
+      - name: Selene
+        working-directory: template
+        run: selene src
