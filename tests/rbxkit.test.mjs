@@ -16,6 +16,7 @@ test("stripComments drops comments but keeps strings, code and --!strict", () =>
 	const src = '--!strict\n--[[ header\nblock ]]\nlocal a = "-- not a comment" -- trailing\n-- full line\nlocal b = [==[ --keep ]==]\nlocal c = `x {a} -- y`\n';
 	const out = stripComments(src);
 	assert.equal(out, '--!strict\nlocal a = "-- not a comment"\nlocal b = [==[ --keep ]==]\nlocal c = `x {a} -- y`\n');
+	assert.equal(stripComments("--!strict\n-- rbxkit-ignore-next-line: x\nwait(1)\n"), "--!strict\n-- rbxkit-ignore-next-line: x\nwait(1)\n");
 });
 
 test("studioNodes mirrors the DataModel", () => {

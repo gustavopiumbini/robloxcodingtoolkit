@@ -54,7 +54,7 @@ function copyDir(src, dest) {
 // init.server.luau / init.client.luau / init.luau becomes that script; other
 // folders become Folders; X.server.luau / X.client.luau / X.luau become scripts.
 
-// Removes comments (keeps strings and the --!strict directive) to save tokens.
+// Removes comments (keeps strings, the --!strict directive and rbxkit-ignore lint suppressions) to save tokens.
 export function stripComments(src) {
 	const out = src.split("");
 	const n = src.length;
@@ -97,7 +97,7 @@ export function stripComments(src) {
 			}
 			const level = longLevel(i + 2);
 			const end = level >= 0 ? longClose(i + 4 + level, level) : src.indexOf("\n", i) === -1 ? n : src.indexOf("\n", i);
-			blank(i, end);
+			if (!src.slice(i, end).includes("rbxkit-ignore")) blank(i, end); // keep lint suppressions
 			i = end;
 		} else if (c === "[" && longLevel(i) >= 0) {
 			const level = longLevel(i);
