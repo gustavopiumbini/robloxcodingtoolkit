@@ -81,7 +81,7 @@ test("wall with door and window: segments cover the wall exactly", function()
 	for _, p in parts(wall) do
 		area += p.Size.X * p.Size.Y
 		expect(near(p.Size.Z, 1), "default thickness 1")
-		expect(p.Position.Y >= 0 and p.Position.Y <= 10)
+		expect(p.CFrame.Position.Y >= 0 and p.CFrame.Position.Y <= 10)
 	end
 	local expected = 20 * 10 - 4 * 7 - 4 * 4
 	expect(near(area, expected), `wall area {area} ~= {expected}`)
@@ -118,7 +118,7 @@ test("stairs climb along LookVector with solid steps", function()
 	for _, p in list do
 		local i = tonumber(p.Name:match("%d+")) :: number
 		expect(near(p.Size.Y, i), "solid step height = rise * index")
-		expect(p.Position.Z < 0, "climbs toward -Z (LookVector)")
+		expect(p.CFrame.Position.Z < 0, "climbs toward -Z (LookVector)")
 	end
 end)
 
@@ -131,7 +131,7 @@ test("audit flags coplanar overlapping faces with different looks", function()
 	expect(report.parts == 2)
 	-- Raised by 0.02: fixed.
 	local tile = root:FindFirstChild("Tile") :: any
-	tile.Position = roblox.Vector3.new(0, 0.77, 0)
+	tile.CFrame = roblox.CFrame.new(0, 0.77, 0)
 	expect(#B.audit(root).zFighting == 0)
 end)
 
