@@ -1,6 +1,6 @@
 ---
 name: roblox-debug
-description: Debug Roblox errors - Output messages, stack traces, "attempt to index nil", "Infinite yield possible", require errors, scripts that don't run, replication and Rojo issues. Use when the user pastes an error, says something "doesn't work", or a play test shows errors.
+description: Debug Roblox errors - Output messages, stack traces, "attempt to index nil", "Infinite yield possible", require errors, scripts that don't run, replication issues. Use when the user pastes an error, says something "doesn't work", or a play test shows errors.
 ---
 
 # Debugging
@@ -11,7 +11,7 @@ description: Debug Roblox errors - Output messages, stack traces, "attempt to in
 - `LocalScript` runs in `StarterPlayerScripts`, `StarterCharacterScripts`, `StarterGui`, `StarterPack`/Backpack, or the character — not in Workspace or ServerScriptService.
 - `RunContext = Client` scripts run on the client anywhere.
 - ModuleScripts only run when required.
-- Rojo: check `.server.luau`/`.client.luau` names and the project mapping; `rojo serve` + plugin connected.
+- Check `Disabled`/`Enabled` and that the script is a Script vs LocalScript as intended (`inspect_instance`).
 
 ## Common errors
 
@@ -31,8 +31,8 @@ description: Debug Roblox errors - Output messages, stack traces, "attempt to in
 
 ## Method
 
-1. Get the exact message and line (`ServerScriptService.Server.Services.ShopService:42` → `src/server/Services/ShopService.luau`).
+1. Get the exact message and line (`ServerScriptService.Server.Services.ShopService:42`) from `get_console_output`; read that script around the line with `script_read`.
 2. Read the code and full stack trace.
 3. Form a hypothesis and confirm with evidence: temporary `warn` with context, or `execute_luau` to inspect live state.
 4. Fix the cause, not the symptom (don't wrap everything in `pcall`).
-5. Remove temporary logs; run `node tools/rbxkit.mjs check`.
+5. Remove temporary logs; run the Studio lint: `return require(game.ServerStorage.DevTools.Lint).summary(require(game.ServerStorage.DevTools.Lint).run())` (via `execute_luau`).

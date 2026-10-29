@@ -16,7 +16,7 @@ description: Player data persistence - DataStoreService, UpdateAsync, session lo
 
 ## Template `DataService`
 
-`src/server/Services/DataService.luau`: UpdateAsync + lock (expires after 30 min), retries, reconcile with `src/server/Config/DataTemplate.luau`, autosave, BindToClose, in-memory fallback in Studio without API access.
+`ServerScriptService.Server.Services.DataService`: UpdateAsync + lock (expires after 30 min), retries, reconcile with `Server.Config.DataTemplate`, autosave, BindToClose, in-memory fallback in Studio without API access.
 
 ```lua
 local data = DataService:Get(player)           -- nil while loading

@@ -22,7 +22,7 @@ Write a 5-line brief: purpose & gameplay (walkable? climbable?), style (low-poly
 
 Never fake curves with dozens of thin parts; use a cylinder/ball/wedge, a mesh, or terrain.
 
-## 3. Build with DevTools (Rojo projects: `ServerStorage.DevTools`)
+## 3. Build with DevTools (`ServerStorage.DevTools`, installed by `install/4-build-tools.luau`)
 
 Run in edit mode through MCP `execute_luau`. Builds are re-runnable (`B.model` replaces the old one) and undoable:
 
@@ -40,7 +40,7 @@ end)
 return B.summary(B.audit(workspace.Cottage))
 ```
 
-API: `model, folder, part{shape,size,cf|pos,color,material,decor,...}, cylinder{radius,height,axis}, wall{from,to,height,thickness,openings,trim}, stairs{cf,steps,width,rise,run}, array, ring, finalize, undoable, audit, summary, palettes`. Read `src/dev/Build.luau` only if you need details. Without DevTools, follow the same rules with plain `Instance.new`.
+API: `model, folder, part{shape,size,cf|pos,color,material,decor,...}, cylinder{radius,height,axis}, wall{from,to,height,thickness,openings,trim}, stairs{cf,steps,width,rise,run}, array, ring, finalize, undoable, audit, summary, palettes`. Read the `Build` module with `script_read` only if you need details. Without DevTools, follow the same rules with plain `Instance.new`.
 
 If an edited DevTools module seems stale in Studio, require a clone: `require(module:Clone())`.
 

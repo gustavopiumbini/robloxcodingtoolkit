@@ -1,5 +1,5 @@
 --!strict
--- Tests for template/src/dev/Build.luau using Lune's Roblox datatypes and Instances.
+-- Tests for studio/ServerStorage/DevTools/Build.luau using Lune's Roblox datatypes and Instances.
 --   lune run tests/luau/build.spec.luau
 
 local process = require("@lune/process")
@@ -7,7 +7,7 @@ local roblox = require("@lune/roblox") :: any
 local load = require("./loader")
 
 -- Roblox globals Build.luau expects. Paths are relative to the repository root.
-local B = load("template/src/dev/Build.luau", {
+local B = load("studio/ServerStorage/DevTools/Build.luau", {
 	task = require("@lune/task"),
 	Instance = roblox.Instance,
 	Vector3 = roblox.Vector3,

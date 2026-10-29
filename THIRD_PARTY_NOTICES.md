@@ -6,7 +6,7 @@ Some skills in this toolkit are copied from MIT-licensed open-source projects. E
 
 - Source: https://github.com/EL4CTEO/roblox-skills (commit `a7538bc9a4355ab08ea141bd9d48670195078188`, 2026-10-17)
 - License: MIT, Copyright (c) 2026 EL4CTEO
-- Skills: `roblox-audio`, `roblox-characters-animation`, `roblox-input`, `roblox-npc-ai`, `roblox-open-cloud`, `roblox-physics`, `roblox-teleport-matchmaking`, `roblox-testing`, `roblox-text-chat`, `roblox-tooling`, `roblox-world-building`
+- Skills: `roblox-audio`, `roblox-characters-animation`, `roblox-input`, `roblox-npc-ai`, `roblox-open-cloud`, `roblox-physics`, `roblox-teleport-matchmaking`, `roblox-testing`, `roblox-text-chat`, `roblox-world-building`
 - Changes: references to skills not in this toolkit were mapped to equivalents (`roblox-security` → `roblox-networking`, `roblox-data-stores` → `roblox-datastore`, `roblox-game-systems` → `roblox-gameplay`, `roblox-code-review` → `roblox-review`); the `roblox-analytics-liveops` reference was removed; frontmatter descriptions were shortened to save tokens.
 
 ## AshExplained/roblox-skills

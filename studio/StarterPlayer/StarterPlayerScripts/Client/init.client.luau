@@ -3,15 +3,17 @@
 	Client bootstrap. Requires every ModuleScript in Controllers/ and calls
 	Controller:Init() (alphabetical), then Controller:Start() (in parallel).
 
-	New controller: node tools/rbxkit.mjs new controller Name
+	New controller: add a ModuleScript to Controllers (see the roblox-architecture skill).
 ]]
 
-local controllersFolder = script:WaitForChild("Controllers")
+local controllersFolder = script:FindFirstChild("Controllers")
 
 local modules: { ModuleScript } = {}
-for _, child in controllersFolder:GetChildren() do
-	if child:IsA("ModuleScript") then
-		table.insert(modules, child)
+if controllersFolder then
+	for _, child in controllersFolder:GetChildren() do
+		if child:IsA("ModuleScript") then
+			table.insert(modules, child)
+		end
 	end
 end
 table.sort(modules, function(a, b)

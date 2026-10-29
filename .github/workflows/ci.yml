@@ -7,7 +7,7 @@ on:
 
 jobs:
   cli:
-    name: CLI and skills
+    name: CLI, installers and skills
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,18 +15,19 @@ jobs:
         with:
           node-version: 22
       - run: npm test
-      - run: npm run check:template
 
   luau:
-    name: Luau (build, types, lint, tests)
+    name: Studio modules (types, lint, tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rojo, luau-lsp, Selene and Lune
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install luau-lsp, Selene and Lune (CI only)
         run: |
           set -euo pipefail
           mkdir -p "$HOME/bin" dl
-          curl -sSfL -o dl/rojo.zip https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-linux-x86_64.zip
           curl -sSfL -o dl/luau-lsp.zip https://github.com/JohnnyMorganz/luau-lsp/releases/download/1.70.1/luau-lsp-linux-x86_64.zip
           curl -sSfL -o dl/selene.zip https://github.com/Kampfkarren/selene/releases/download/0.32.0/selene-0.32.0-linux.zip
           curl -sSfL -o dl/lune.zip https://github.com/lune-org/lune/releases/download/v0.11.1/lune-0.11.1-linux-x86_64.zip
@@ -35,22 +36,23 @@ jobs:
           echo "$HOME/bin" >> "$GITHUB_PATH"
           curl -sSfL -o dl/globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.luau
 
-      - name: Rojo build
-        working-directory: template
-        run: rojo build default.project.json -o "$RUNNER_TEMP/game.rbxl"
-
       - name: Type check (luau-lsp, strict, Roblox API)
-        working-directory: template
         run: |
-          rojo sourcemap default.project.json -o sourcemap.json
+          node tests/sourcemap.mjs > sourcemap.json
           luau-lsp analyze --platform=roblox --sourcemap=sourcemap.json \
-            --definitions=@roblox=../dl/globalTypes.d.luau --base-luaurc=.luaurc src
+            --definitions=@roblox=dl/globalTypes.d.luau --base-luaurc=studio/.luaurc studio
 
       - name: Selene
-        working-directory: template
-        run: selene src
+        working-directory: studio
+        run: selene .
 
       - name: Lune unit tests
         run: |
           lune run tests/luau/utils.spec.luau
           lune run tests/luau/build.spec.luau
+          lune run tests/luau/lint.spec.luau
+
+      - name: Studio installers (run in a simulated DataModel)
+        run: |
+          node tools/rbxkit.mjs init "$RUNNER_TEMP/agent"
+          lune run tests/luau/install.spec.luau "$RUNNER_TEMP/agent/install"

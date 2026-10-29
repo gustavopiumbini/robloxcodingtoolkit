@@ -18,19 +18,19 @@ Tools (may be prefixed `mcp__Roblox_Studio__`):
 | Assets | `search_asset`, `insert_asset`, `generate_mesh`, `generate_material`, `generate_procedural_model`, `wait_job_finished`, `upload_image`, `store_image` |
 | Docs | `http_get` (Roblox docs), `skill` (Roblox's built-in `rbx-*` skills) |
 
-No tools? Tell the user to enable them (`node tools/rbxkit.mjs mcp`).
+No tools? Tell the user to enable them (`node tools/rbxkit.mjs mcp`): without MCP you can't touch the game.
 
-## Rojo vs direct edits
+## Editing the game
 
-- Rojo project (`default.project.json`, `rojo serve` running): **edit files in `src/`**; Rojo syncs. Don't `multi_edit` synced scripts (they get overwritten / diverge from git).
-- Use MCP to read game state (maps, non-Rojo instances), run inspection code, play test, read logs, build geometry.
-- No Rojo: edit scripts directly with `script_read` + `multi_edit` (always read first).
+- Code lives in the place. Read with `script_grep`/`script_read` (only the lines you need), change with `multi_edit` (small replacements), create new scripts with `execute_luau` (`Instance.new`, set `Name`, `Source`, then `Parent`).
+- Toolkit modules missing (`ServerStorage.DevTools` absent)? Run the `install/*.luau` installers with `execute_luau` (see `AGENTS.md`).
+- Big or risky changes: ask the user to save/publish a version first (File → Version History can restore it).
 
 ## Verify loop (after implementing)
 
 1. `list_roblox_studios` → pick `studio_id` (ask if several).
 2. `get_studio_state` (edit or play?).
-3. Rojo: confirm sync with `script_grep` for a new line.
+3. Lint: `local L = require(game.ServerStorage.DevTools.Lint) return L.summary(L.run())` → fix errors first.
 4. `start_stop_play` → wait a few seconds → `get_console_output`: errors, warnings, "Infinite yield possible".
 5. Exercise the feature: `execute_luau` (e.g. read `Players:GetPlayers()[1]:GetAttribute("Coins")`), `character_navigation`/`user_keyboard_input`, `screen_capture` for UI.
 6. Stop, fix, repeat until clean. Report what was and wasn't verified.

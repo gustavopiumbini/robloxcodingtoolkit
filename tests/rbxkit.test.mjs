@@ -5,86 +5,65 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { checkSource, maskSource, mcpInstructions } from "../tools/rbxkit.mjs";
+import { stripComments, studioNodes, buildInstallers, INSTALL_CHUNKS, mcpInstructions } from "../tools/rbxkit.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CLI = path.join(ROOT, "tools", "rbxkit.mjs");
-
-const rules = (src, file = "src/shared/X.luau") => checkSource("--!strict\n" + src, file).map((f) => f.rule);
 const run = (args, cwd) => spawnSync(process.execPath, [CLI, ...args], { cwd, encoding: "utf8", env: { ...process.env, NO_COLOR: "1" } });
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "rbxkit-"));
 
-test("maskSource keeps size/lines and blanks comments and strings", () => {
-	const src = 'local a = "wait(1)" -- wait(2)\n--[[ spawn(f)\n]] local b = [==[ delay() ]==]\nlocal c = `x {wait(3)} y`';
-	const masked = maskSource(src);
-	assert.equal(masked.length, src.length);
-	assert.equal(masked.split("\n").length, src.split("\n").length);
-	assert.ok(!masked.includes("wait(1)"));
-	assert.ok(!masked.includes("wait(2)"));
-	assert.ok(!masked.includes("spawn"));
-	assert.ok(!masked.includes("delay"));
-	assert.ok(masked.includes("wait(3)"), "expressions inside interpolated strings are code");
+test("stripComments drops comments but keeps strings, code and --!strict", () => {
+	const src = '--!strict\n--[[ header\nblock ]]\nlocal a = "-- not a comment" -- trailing\n-- full line\nlocal b = [==[ --keep ]==]\nlocal c = `x {a} -- y`\n';
+	const out = stripComments(src);
+	assert.equal(out, '--!strict\nlocal a = "-- not a comment"\nlocal b = [==[ --keep ]==]\nlocal c = `x {a} -- y`\n');
 });
 
-test("detects deprecated APIs", () => {
-	assert.deepEqual(rules("wait(1)"), ["deprecated-wait"]);
-	assert.deepEqual(rules("spawn(f)"), ["deprecated-spawn"]);
-	assert.deepEqual(rules("delay(1, f)"), ["deprecated-delay"]);
-	assert.deepEqual(rules("part.Touched:connect(f)"), ["lowercase-connect"]);
-	assert.deepEqual(rules("model:SetPrimaryPartCFrame(cf)"), ["set-primary-part-cframe"]);
-	assert.deepEqual(rules("humanoid:LoadAnimation(anim)"), ["humanoid-load-animation"]);
-	assert.deepEqual(rules('local v = Instance.new("BodyVelocity")'), ["body-movers"]);
-	assert.deepEqual(rules('local p = Instance.new("Part", workspace)'), ["instance-new-parent"]);
+test("studioNodes mirrors the DataModel", () => {
+	const byPath = Object.fromEntries(studioNodes().map((n) => [n.segments.join("."), n.className]));
+	assert.equal(byPath["ServerScriptService"], "ServerScriptService");
+	assert.equal(byPath["ServerScriptService.Server"], "Script");
+	assert.equal(byPath["ServerScriptService.Server.Services.DataService"], "ModuleScript");
+	assert.equal(byPath["StarterPlayer.StarterPlayerScripts"], "StarterPlayerScripts");
+	assert.equal(byPath["StarterPlayer.StarterPlayerScripts.Client"], "LocalScript");
+	assert.equal(byPath["ReplicatedStorage.Shared"], "Folder");
+	assert.equal(byPath["ServerStorage.DevTools.Lint"], "ModuleScript");
 });
 
-test("ignores modern APIs and text inside strings/comments", () => {
-	assert.deepEqual(rules("task.wait(1)\ntask.spawn(f)\ntask.delay(1, f)\nsignal:Wait()\nconn.Connected = true"), []);
-	assert.deepEqual(rules('print("wait(1)") -- spawn(f)'), []);
-	assert.deepEqual(rules('local p = Instance.new("Part")\np.Parent = workspace'), []);
-	assert.deepEqual(rules("local s = game:GetService(\"Players\")"), []);
+test("installers cover every studio script exactly once", () => {
+	const installers = buildInstallers();
+	assert.equal(installers.length, INSTALL_CHUNKS.length);
+	const scripts = studioNodes().filter((n) => n.file);
+	const total = installers.reduce((sum, i) => sum + i.modules, 0);
+	assert.equal(total, scripts.length, "each script belongs to exactly one installer");
+	for (const node of scripts) {
+		const hits = installers.filter((i) => i.code.includes(`${JSON.stringify(node.className)}, ${JSON.stringify(node.name)},`));
+		assert.equal(hits.length, 1, `${node.segments.join(".")} in ${hits.length} installers`);
+	}
+	for (const i of installers) {
+		assert.match(i.code, /^-- rbxkit installer \d\/\d:/);
+		assert.match(i.code, /local FORCE = false/);
+		assert.ok(!/--\[\[/.test(i.code.split("local FORCE")[1].replace(/\[(=*)\[[\s\S]*?\]\1\]/g, "")), "no block comments outside sources");
+	}
+	assert.ok(installers.slice(0, 3).reduce((s, i) => s + i.code.length, 0) < 40000, "core installers stay small (tokens)");
 });
 
-test("security rules", () => {
-	assert.deepEqual(rules("require(123456)"), ["require-asset-id"]);
-	assert.deepEqual(rules("loadstring(code)()"), ["loadstring"]);
-	assert.deepEqual(rules("remote:InvokeClient(player)"), ["invoke-client"]);
-	assert.deepEqual(rules("remote:FireServer(player, 1)"), ["fireserver-player-arg"]);
-	assert.deepEqual(rules("local p = Players.LocalPlayer", "src/server/Services/A.luau"), ["localplayer-on-server"]);
-	assert.deepEqual(rules("local p = Players.LocalPlayer", "src/client/Controllers/A.luau"), []);
-	assert.deepEqual(rules('local d = game:GetService("DataStoreService")', "src/client/init.client.luau"), ["server-api-on-client"]);
-	assert.deepEqual(rules("RunService.RenderStepped:Connect(f)", "src/server/X.server.luau"), ["render-on-server"]);
-});
-
-test("remote without validation", () => {
-	const bad = "remote.OnServerEvent:Connect(function(player, amount)\n\tcoins += amount\nend)";
-	assert.deepEqual(rules(bad), ["remote-without-validation"]);
-	const good = 'remote.OnServerEvent:Connect(function(player, amount)\n\tif typeof(amount) ~= "number" then return end\nend)';
-	assert.deepEqual(rules(good), []);
-	const noArgs = "remote.OnServerEvent:Connect(function(player)\n\tprint(player)\nend)";
-	assert.deepEqual(rules(noArgs), []);
-});
-
-test("while true without yield", () => {
-	assert.deepEqual(rules("while true do\n\tx += 1\nend"), ["while-true-no-yield"]);
-	assert.deepEqual(rules("while true do\n\ttask.wait(1)\nend"), []);
-	assert.deepEqual(rules("while true do\n\tif x then break end\nend"), []);
-});
-
-test("DataStore without pcall", () => {
-	assert.deepEqual(rules("local v = store:GetAsync(key)"), ["datastore-no-pcall"]);
-	assert.deepEqual(rules("local ok, v = pcall(function()\n\treturn store:GetAsync(key)\nend)"), []);
-	assert.ok(rules("pcall(store.SetAsync, store, k, v)").every((r) => r !== "datastore-no-pcall"));
-});
-
-test("suppression comments", () => {
-	assert.deepEqual(rules("wait(1) -- rbxkit-ignore"), []);
-	assert.deepEqual(rules("wait(1) -- rbxkit-ignore: deprecated-wait"), []);
-	assert.deepEqual(rules("wait(1) -- rbxkit-ignore: outra-regra"), ["deprecated-wait"]);
-	assert.deepEqual(rules("-- rbxkit-ignore-next-line\nwait(1)"), []);
-});
-
-test("missing-strict", () => {
-	assert.deepEqual(checkSource("local x = 1", "a.luau").map((f) => f.rule), ["missing-strict"]);
+test("init creates an agent folder without touching existing AGENTS.md", () => {
+	const dir = tmp();
+	fs.writeFileSync(path.join(dir, "AGENTS.md"), "mine");
+	const r = run(["init", dir], ROOT);
+	assert.equal(r.status, 0, r.stderr);
+	assert.equal(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), "mine");
+	for (const f of ["CLAUDE.md", "tools/rbxkit.mjs", ".claude/skills/roblox-3d-building/SKILL.md", ".agents/skills/roblox-studio-mcp/SKILL.md", "install/1-shared.luau", "install/5-lint.luau"]) {
+		assert.ok(fs.existsSync(path.join(dir, f)), `missing ${f}`);
+	}
+	assert.ok(!fs.existsSync(path.join(dir, "default.project.json")), "no Rojo project");
+	const again = run(["init", dir, "--force"], ROOT);
+	assert.equal(again.status, 0);
+	assert.notEqual(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), "mine");
+	// The copied CLI works standalone for docs/mcp/doctor but can't init without the toolkit.
+	const local = path.join(dir, "tools", "rbxkit.mjs");
+	assert.equal(spawnSync(process.execPath, [local, "mcp", "--os", "mac"], { cwd: dir, encoding: "utf8" }).status, 0);
+	assert.equal(spawnSync(process.execPath, [local, "init", path.join(dir, "x")], { cwd: dir, encoding: "utf8" }).status, 2);
 });
 
 test("MCP instructions", () => {
@@ -92,55 +71,15 @@ test("MCP instructions", () => {
 	assert.match(mcpInstructions("mac", "codex"), /\[mcp_servers\.Roblox_Studio\]/);
 });
 
-test("template passes its own lint", () => {
-	const r = run(["check", "--strict", path.join(ROOT, "template", "src")], ROOT);
-	assert.equal(r.status, 0, r.stdout + r.stderr);
-});
-
-test("init creates a full project and new generates files", () => {
-	const dir = path.join(tmp(), "MyGame");
-	const r = run(["init", dir], ROOT);
-	assert.equal(r.status, 0, r.stderr);
-	for (const f of [
-		"default.project.json",
-		".gitignore",
-		"AGENTS.md",
-		"CLAUDE.md",
-		"tools/rbxkit.mjs",
-		".claude/skills/roblox-feature/SKILL.md",
-		".agents/skills/roblox-networking/SKILL.md",
-		"src/shared/Net.luau",
-		"src/server/Services/DataService.luau",
-		"src/dev/Build.luau",
-		"src/dev/Shots.luau",
-	]) {
-		assert.ok(fs.existsSync(path.join(dir, f)), `missing ${f}`);
+test("no Rojo leftovers in user-facing files", () => {
+	const files = ["agent/AGENTS.md", "agent/CLAUDE.md", "docs/prompts/new-game.md", "docs/prompts/existing-project.md"];
+	for (const name of fs.readdirSync(path.join(ROOT, "skills"))) {
+		if (!fs.existsSync(path.join(ROOT, "skills", name, "LICENSE"))) files.push(`skills/${name}/SKILL.md`); // our own skills
 	}
-	assert.equal(JSON.parse(fs.readFileSync(path.join(dir, "default.project.json"), "utf8")).name, "MyGame");
-
-	// The copied rbxkit works standalone inside the project.
-	const localCli = path.join(dir, "tools", "rbxkit.mjs");
-	const gen = (args) => spawnSync(process.execPath, [localCli, ...args], { cwd: dir, encoding: "utf8" });
-	assert.equal(gen(["new", "service", "Inventory"]).status, 0);
-	assert.equal(gen(["new", "controller", "camera"]).status, 0);
-	assert.equal(gen(["new", "module", "Util/MathUtil"]).status, 0);
-	assert.ok(fs.existsSync(path.join(dir, "src/server/Services/InventoryService.luau")));
-	assert.ok(fs.existsSync(path.join(dir, "src/client/Controllers/CameraController.luau")));
-	assert.ok(fs.existsSync(path.join(dir, "src/shared/Util/MathUtil.luau")));
-	assert.equal(gen(["new", "service", "Inventory"]).status, 2, "does not overwrite without --force");
-	const check = gen(["check", "--strict"]);
-	assert.equal(check.status, 0, check.stdout);
-	assert.notEqual(gen(["install", "."]).status, 0, "install needs the toolkit repository");
-});
-
-test("install keeps an existing AGENTS.md without --force", () => {
-	const dir = tmp();
-	fs.writeFileSync(path.join(dir, "AGENTS.md"), "mine");
-	const r = run(["install", dir], ROOT);
-	assert.equal(r.status, 0, r.stderr);
-	assert.equal(fs.readFileSync(path.join(dir, "AGENTS.md"), "utf8"), "mine");
-	assert.ok(fs.existsSync(path.join(dir, "CLAUDE.md")));
-	assert.ok(fs.existsSync(path.join(dir, ".claude/skills/roblox-luau/SKILL.md")));
+	for (const f of files) {
+		const text = fs.readFileSync(path.join(ROOT, f), "utf8");
+		assert.ok(!/\brojo\b|rokit|default\.project\.json|rbxkit\.mjs (check|new)\b/i.test(text), `${f} still mentions Rojo/rokit/old commands`);
+	}
 });
 
 test("every skill has frontmatter with name == folder and a description", () => {

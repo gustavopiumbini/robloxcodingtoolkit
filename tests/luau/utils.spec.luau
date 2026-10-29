@@ -1,5 +1,5 @@
 --!strict
--- Tests for template/src/shared/Util. Run with Lune (https://lune-org.github.io):
+-- Tests for studio/ReplicatedStorage/Shared/Util. Run with Lune (https://lune-org.github.io):
 --   lune run tests/luau/utils.spec.luau
 
 local process = require("@lune/process")
@@ -7,7 +7,7 @@ local task = require("@lune/task")
 local load = require("./loader")
 
 -- Paths are relative to the repository root (where `lune run` is invoked).
-local UTIL = "template/src/shared/Util/"
+local UTIL = "studio/ReplicatedStorage/Shared/Util/"
 local globals = { task = task }
 local Guard = load(UTIL .. "Guard.luau", globals)
 local RateLimiter = load(UTIL .. "RateLimiter.luau", globals)

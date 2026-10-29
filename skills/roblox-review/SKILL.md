@@ -5,7 +5,7 @@ description: Audit Roblox code - remote security, client trust, data loss/duplic
 
 # Code review
 
-1. Automated pass: `node tools/rbxkit.mjs check --json`. Treat results as leads; confirm each by reading the code.
+1. Automated pass: `local L = require(game.ServerStorage.DevTools.Lint) return L.summary(L.run(), 60, true)` via `execute_luau` (install `install/5-lint.luau` first if missing). Treat results as leads; confirm each with `script_read`.
 2. Manual pass by priority:
 
 **Critical (security/economy)**

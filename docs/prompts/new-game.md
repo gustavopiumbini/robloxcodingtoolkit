@@ -1,47 +1,49 @@
 # One-prompt setup: new Roblox game
 
-You are an AI coding agent (Claude Code, Codex, or similar). The user wants a Roblox game built from the description that came with this file. Do the whole job: environment, project, Studio connection, the game itself, and verification. Work autonomously; stop to ask only where this file says **ASK**. Reply in the user's language and explain things plainly (they may not be a programmer).
+You are an AI coding agent (Claude Code, Codex, or similar). The user wants a Roblox game built from the description that came with this file. You build it **directly in Roblox Studio through the Studio MCP**. Work autonomously; stop to ask only where this file says **ASK**. Reply in the user's language and explain things plainly (they may not be a programmer).
 
-Keep a short checklist of the 6 steps below and report progress in one line per step. Every step is idempotent: if the user restarts and says "continue Roblox setup", re-read this file, detect what is already done, and resume.
+Keep a short checklist of the 6 steps and report progress in one line per step. Every step is idempotent: if the user restarts you and says "continue Roblox setup", re-read this file, detect what is done, and resume.
 
-## 1. Inspect the environment (read-only)
+## 1. Inspect (read-only)
 
-Detect and note: OS (Windows/macOS; Studio doesn't run on Linux — on Linux, build everything but tell the user Studio steps need Windows/macOS), `node --version` (need 18+), `git`, `rokit`, `rojo`, and whether Roblox Studio is installed (Windows: `%LOCALAPPDATA%\Roblox\Versions`; macOS: `/Applications/RobloxStudio.app`). Check whether Roblox Studio MCP tools are available to you (names containing `Roblox_Studio`, e.g. `list_roblox_studios`).
+Detect: OS (Studio runs on Windows/macOS only), `node --version` (18+), whether Roblox Studio is installed (Windows: `%LOCALAPPDATA%\Roblox\Versions`; macOS: `/Applications/RobloxStudio.app`), and whether Studio MCP tools are available to you (names containing `Roblox_Studio`, e.g. `list_roblox_studios`).
 
-**ASK once**, listing only what's missing, before installing anything: Node.js (https://nodejs.org), Rokit, Roblox Studio (https://create.roblox.com — the user must install and sign in themselves).
+**ASK once**, listing only what's missing: Node.js (https://nodejs.org) and Roblox Studio (https://create.roblox.com — the user installs it and signs in).
 
-## 2. Create the project
+## 2. Agent folder
 
-- Pick a short PascalCase game name from the description.
-- If the current folder is empty (or only has `.git`, `README.md`, `LICENSE`, `.gitignore`): `npx --yes github:gustavopiumbini/robloxcodingtoolkit init . --force --name <Name>`.
-- Otherwise: `npx --yes github:gustavopiumbini/robloxcodingtoolkit init <Name>` and work inside `<Name>/` from now on.
-- If `npx` can't reach GitHub, clone https://github.com/gustavopiumbini/robloxcodingtoolkit and run `node <clone>/tools/rbxkit.mjs init ...` instead.
-- Read the generated `AGENTS.md` and follow it for the rest of the job. Skills are in `.claude/skills/` and `.agents/skills/`; if your client only loads skills at startup, read the relevant `SKILL.md` files directly.
+In the current folder run `npx --yes github:gustavopiumbini/robloxcodingtoolkit init .` (non-destructive: adds skills, `AGENTS.md`, `CLAUDE.md`, `tools/rbxkit.mjs` and the Studio installers in `install/`). If `npx` can't reach GitHub, clone https://github.com/gustavopiumbini/robloxcodingtoolkit and run `node <clone>/tools/rbxkit.mjs init .`.
 
-## 3. Toolchain
+Read `AGENTS.md` and follow it from now on. If your client loads skills only at startup, read the needed `SKILL.md` files from `.claude/skills/` or `.agents/skills/` directly.
 
-- Rokit missing (after the user agreed): macOS/Linux `curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash`; Windows PowerShell `Invoke-RestMethod https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.ps1 | Invoke-Expression`. Open a new shell (PATH changes) or call it by full path (`~/.rokit/bin`).
-- In the project: `rokit install --no-trust-check` (rojo, selene, stylua, luau-lsp pinned in `rokit.toml`).
-- `rojo plugin install` (installs the Rojo plugin into Studio).
-- `node tools/rbxkit.mjs doctor` to confirm.
+## 3. Connect Roblox Studio
 
-## 4. Connect Roblox Studio
+If the Studio MCP tools are not available, tell the user exactly this, then stop until they say "continue Roblox setup":
+1. Open Roblox Studio → **New** → **Baseplate** (or open their place).
+2. **Assistant** → **⋯** → **Manage MCP Servers** → turn on **Enable Studio as MCP server**.
+3. Under **Quick connect**, turn on their client (**Claude Code** or **Codex CLI**).
+4. Restart this agent in the same folder and say "continue Roblox setup".
+(`node tools/rbxkit.mjs mcp` prints manual setup commands if Quick connect isn't available.)
 
-- Start live sync: `rojo serve` as a **background** process (keep it running). If you can't run background processes, tell the user to run `rojo serve` in a separate terminal in the project folder.
-- Tell the user: open Roblox Studio → new Baseplate → Plugins tab → **Rojo** → **Connect**. Also: Game Settings → Security → **Enable Studio Access to API Services** (needed for saving data; requires the place to be published once — otherwise data stays in memory, which is fine for testing).
-- Studio MCP not available to you yet → tell the user: Studio → Assistant → ⋯ → Manage MCP Servers → **Enable Studio as MCP server** → Quick connect → turn on your client (Claude Code or Codex CLI) → restart this agent in the project folder and say "continue Roblox setup". Show `node tools/rbxkit.mjs mcp` output if they prefer manual setup. While waiting, continue with step 5 (code doesn't need Studio).
+While waiting you may draft the design (step 5.1) so no time is lost.
+
+When connected: `list_roblox_studios` → if several, **ASK** which one; `get_studio_state` must be in edit mode (stop a running play test first).
+
+## 4. Install the toolkit into the place
+
+`execute_luau` with `return game:GetService("ServerStorage"):FindFirstChild("DevTools") ~= nil`. If false, run every installer in `install/` in order (`1-shared` … `5-lint`), passing each file's full content as the code. Each returns a one-line summary; re-running is safe. Then ask the user to save (Ctrl+S / File → Save to Roblox).
 
 ## 5. Build the game
 
 Follow the `roblox-feature` skill end to end:
-1. Turn the description into a short design (core loop, systems, data, UI, world, monetization). Fill gaps with the most common choices in popular Roblox games and state them in a few lines — don't ask unless a choice changes everything.
-2. Plan by system: server Services, `Net.Names` remotes with `Guard`, saved data in `DataTemplate`, client Controllers/UI, map/geometry.
-3. Implement system by system with `node tools/rbxkit.mjs new ...` skeletons and the template modules. Remove or adapt the example Shop/Coin/HUD code if it doesn't fit the game.
-4. World and props: follow `roblox-3d-building` (DevTools `Build` + `Shots` review loop) once Studio MCP is connected; otherwise write a build script the user can run later and say so.
-5. Monetization only if the description asks for it (`roblox-monetization`); use placeholder ids marked `-- TODO`.
+1. Turn the description into a short design (core loop, systems, saved data, UI, world, monetization). Fill gaps with the most common choices in popular Roblox games and state them in a few lines — don't ask unless a choice changes everything.
+2. Plan by system: server Services, `Net.Names` remotes with `Guard`, `DataTemplate` fields, client Controllers/UI, map and props.
+3. Implement system by system: create ModuleScripts with `execute_luau`, edit with `multi_edit` (see `AGENTS.md`).
+4. World, buildings and props: `roblox-3d-building` (DevTools `Build` + `Shots` review loop with screenshots).
+5. Monetization only if requested (`roblox-monetization`), with placeholder ids marked `-- TODO`.
 
 ## 6. Verify and hand over
 
-- `node tools/rbxkit.mjs check` → no errors. `selene src`, `stylua --check src`, `rojo build -o build.rbxl` → clean.
-- With Studio MCP: play test (`roblox-studio-mcp` verify loop), zero errors in Output, screenshots of the main areas; fix and repeat.
-- Final message: what was built (systems + map), how to play it in Studio, what the user must still do (publish, asset/pass ids, API access), what you could not verify, and 3 suggested next prompts.
+- Lint: `local L = require(game.ServerStorage.DevTools.Lint) return L.summary(L.run())` → 0 errors.
+- Play test (`roblox-studio-mcp` verify loop): zero errors in Output, exercise the core loop, screenshots of the main areas; fix and repeat.
+- Final message: what was built (systems + map), how to play it, what the user must do (save/publish, asset/pass ids, Game Settings → Security → Enable Studio Access to API Services after publishing so data saves), what you could not verify, and 3 suggested next prompts.

@@ -79,4 +79,4 @@ return Car
 - Client numbers can be `NaN` (`x ~= x`) or `math.huge`: validate.
 - `require` caches per ModuleScript per side: module state is shared on that side; modules in ReplicatedStorage run separately on client and server.
 
-Finish with `node tools/rbxkit.mjs check` (plus `selene src` / `stylua --check src` when installed).
+Finish with the Studio lint: `return require(game.ServerStorage.DevTools.Lint).summary(require(game.ServerStorage.DevTools.Lint).run())` (via `execute_luau`).

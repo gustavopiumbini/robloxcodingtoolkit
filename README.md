@@ -5,13 +5,12 @@
 <h1 align="center">Roblox Vibe Coding Toolkit</h1>
 
 <p align="center">
-  <b>Describe your game. Your AI agent builds it in Roblox Studio — securely, cleanly, and good-looking.</b>
+  <b>Describe your game. Your AI agent builds it directly in Roblox Studio — securely, cleanly, and good-looking.</b>
 </p>
 
 <p align="center">
   <a href="#-one-prompt-setup"><b>ONE-PROMPT SETUP →</b></a> ·
-  <a href="#-quick-start">QUICK START</a> ·
-  <a href="#-connect-roblox-studio">CONNECT STUDIO</a> ·
+  <a href="#-manual-setup">MANUAL SETUP</a> ·
   <a href="#-whats-inside">WHAT'S INSIDE</a> ·
   <a href="#-3d-building-that-looks-good">3D BUILDING</a> ·
   <a href="#-the-rbxkit-cli">RBXKIT CLI</a>
@@ -20,12 +19,12 @@
 <p align="center">
   <a href="https://github.com/gustavopiumbini/robloxcodingtoolkit/actions/workflows/ci.yml"><img src="https://github.com/gustavopiumbini/robloxcodingtoolkit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-E8B86D" alt="MIT"></a>
-  <img src="https://img.shields.io/badge/skills-26-E8B86D" alt="26 skills">
+  <img src="https://img.shields.io/badge/skills-25-E8B86D" alt="25 skills">
   <img src="https://img.shields.io/badge/Luau-strict-2B2D31" alt="Luau strict">
 </p>
 
 <p align="center">
-  <b>Claude Code</b> + <b>Codex CLI</b> / portable <code>SKILL.md</code> skills / Rojo template / Roblox Studio MCP
+  <b>Claude Code</b> + <b>Codex CLI</b> / portable <code>SKILL.md</code> skills / Roblox Studio MCP / no extra toolchain
 </p>
 
 ---
@@ -34,15 +33,17 @@
 
 | Your situation | Path | What you get |
 |---|---|---|
-| **I have a game idea** | [One prompt](#-one-prompt-setup) · [manual](#1-create-a-game) | Rojo project, secure networking and data modules, 3D build tools, 26 skills, agent rules |
-| **I already have a project** | [One prompt](#existing-project-one-prompt) · [manual](#existing-project) | Skills + `AGENTS.md` + `rbxkit` in your repo, nothing overwritten |
-| **I want the agent inside Studio** | [Connect Studio MCP](#-connect-roblox-studio) | Your agent can play test, read Output, run Luau and take screenshots |
+| **I have a game idea** | [One prompt](#-one-prompt-setup) · [manual](#-manual-setup) | Secure networking and data modules, 3D build tools, 25 skills, agent rules — installed into your place |
+| **I already have a game** | [One prompt](#existing-game-one-prompt) | Skills + agent rules, DevTools in `ServerStorage`, a baseline audit — nothing overwritten |
+| **I just want to connect Studio** | [Connect Studio](#-connect-roblox-studio) | Your agent can edit scripts, build, play test, read Output and take screenshots |
 
 <p align="center">
   <img src="docs/assets/workflow.svg" alt="Describe it. Build it. Verify it." width="100%">
 </p>
 
-You describe the goal in plain language — *"add a shop with a sword and a shield"*, *"build a medieval tavern"*, *"make an obby with 10 checkpoints"*. The agent loads only the skills it needs, plans the client/server split, writes strict Luau on top of battle-tested modules, builds geometry in Studio, then **proves it works**: lint, type check, play test, screenshots.
+You describe the goal in plain language — *"add a shop with a sword and a shield"*, *"build a medieval tavern"*, *"make an obby with 10 checkpoints"*. The agent loads only the skills it needs, plans the client/server split, writes strict Luau on top of battle-tested modules, builds geometry in Studio, then **proves it works**: lint, play test, screenshots.
+
+**Studio-first:** your game lives in Roblox Studio. No Rojo, no file sync, no extra tools to install — just Studio, your agent, and Node.js for the setup command.
 
 ---
 
@@ -67,70 +68,54 @@ The agent then does everything in one go:
 
 | Step | What the agent does |
 |---|---|
-| **1 / Inspect** | Checks OS, Node, Rokit, Rojo, Roblox Studio and Studio MCP — asks you **once** before installing what's missing |
-| **2 / Project** | Creates the game with `rbxkit init` (template, 26 skills, `AGENTS.md`) |
-| **3 / Toolchain** | `rokit install`, `rojo plugin install`, `rbxkit doctor` |
-| **4 / Studio** | Starts `rojo serve` and tells you the 2 clicks to connect Rojo and Studio MCP |
-| **5 / Game** | Designs the core loop, then builds servers, remotes, saved data, UI, map and props with the skills |
-| **6 / Verify** | Lint, `rojo build`, play test in Studio with zero Output errors, screenshots — then a hand-over with next prompts |
+| **1 / Inspect** | Checks Node, Roblox Studio and the Studio MCP — asks you **once** for anything missing |
+| **2 / Agent folder** | `rbxkit init`: skills, `AGENTS.md`, Studio installers |
+| **3 / Studio** | Tells you the 3 clicks to connect the Studio MCP, then picks your open place |
+| **4 / Install** | Runs the installers in Studio: game framework + DevTools (idempotent, never overwrites) |
+| **5 / Game** | Designs the core loop, then builds services, remotes, saved data, UI, map and props |
+| **6 / Verify** | Lint in Studio, play test with zero Output errors, screenshots — then a hand-over with next prompts |
 
-If the agent has to restart (for example after you turn on Studio MCP), just say **"continue Roblox setup"**: every step detects what's already done.
+If the agent has to restart (for example right after you connect the Studio MCP), just say **"continue Roblox setup"**: every step detects what's already done.
 
-<a id="existing-project-one-prompt"></a>
-**Existing project?** Open the agent at your project root:
+<a id="existing-game-one-prompt"></a>
+**Existing game?** Open the agent in any folder (it only stores skills and notes there) with your place open in Studio:
 
 ```text
 Read https://raw.githubusercontent.com/gustavopiumbini/robloxcodingtoolkit/main/docs/prompts/existing-project.md and follow it.
 Task: [optional — e.g. "audit everything before I publish" or "add a daily reward"]
 ```
 
-It installs the toolkit without overwriting your files, adapts `AGENTS.md` to your layout and frameworks, runs a baseline audit and then does the task.
+It maps your game, installs only the DevTools (plus the framework if you agree), runs a baseline audit and then does the task.
 
 > [!TIP]
 > If your agent can't open URLs (some Codex sandboxes block network), run `curl -sL <url>` yourself and paste the file, or clone this repo and point the agent at `docs/prompts/`.
 
 ---
 
-## ⚡ Quick start
+## 🧭 Manual setup
 
-**Requirements:** [Roblox Studio](https://create.roblox.com/) · [Node.js 18+](https://nodejs.org/) · [Rokit](https://github.com/rojo-rbx/rokit) · [Claude Code](https://claude.com/claude-code) and/or [Codex CLI](https://developers.openai.com/codex)
-
-### 1. Create a game
+**Requirements:** [Roblox Studio](https://create.roblox.com/) (Windows or macOS) · [Node.js 18+](https://nodejs.org/) · [Claude Code](https://claude.com/claude-code) and/or [Codex CLI](https://developers.openai.com/codex)
 
 ```bash
-npx github:gustavopiumbini/robloxcodingtoolkit init MyGame
-cd MyGame
-rokit install     # rojo, selene, stylua, luau-lsp
-rojo serve        # keep it running
+mkdir MyGame && cd MyGame
+npx github:gustavopiumbini/robloxcodingtoolkit init     # skills, AGENTS.md, CLAUDE.md, install/*.luau
 ```
 
-In Studio, install the [Rojo plugin](https://rojo.space/docs/v7/getting-started/installation/), open a place and click **Connect**. Everything in `src/` now syncs live.
+1. Open Roblox Studio and your place (or a new Baseplate).
+2. [Connect the Studio MCP](#-connect-roblox-studio).
+3. Start your agent in `MyGame/` (`claude` or `codex`) and ask:
 
-### 2. Talk to your agent
-
-```bash
-claude    # or: codex
-```
-
-> *Use the roblox-feature skill and add a pet system: pets follow the player and boost coins.*
+> *Install the toolkit into my open place, then add a pet system: pets follow the player and boost coins.*
 >
 > *Build a cozy medieval tavern next to spawn, with an interior, and review it with screenshots.*
 >
 > *Add a VIP Game Pass that doubles coins.*
 >
-> */roblox-review — audit the project before I publish.*
+> */roblox-review — audit the game before I publish.*
 >
 > *My game throws `attempt to index nil with 'Humanoid'`.*
 
-In Claude Code every skill is also a slash command (`/roblox-feature`, `/roblox-3d-building`, …). In Codex, mention the skill by name or use `$roblox-feature`.
-
-### Existing project
-
-```bash
-npx github:gustavopiumbini/robloxcodingtoolkit install path/to/your/game
-```
-
-Adds skills to `.claude/skills/` (Claude Code) and `.agents/skills/` (Codex), plus `AGENTS.md`, `CLAUDE.md` and `tools/rbxkit.mjs`. Existing `AGENTS.md`/`CLAUDE.md` are kept unless you pass `--force`. Skills assume the template's Rojo layout; adjust the *Map* section of `AGENTS.md` if yours differs. No Node? Copy `skills/*` and `agent/*.md` by hand.
+In Claude Code every skill is also a slash command (`/roblox-feature`, `/roblox-3d-building`, …). In Codex, mention the skill by name or use `$roblox-feature`. No Node? Copy `skills/*` to `.claude/skills/` and/or `.agents/skills/`, and `agent/*.md` to the folder.
 
 ---
 
@@ -151,26 +136,43 @@ codex  mcp add Roblox_Studio -- /Applications/RobloxStudio.app/Contents/MacOS/St
 ```
 
 > [!IMPORTANT]
-> MCP clients can read **and modify** the open place. Connect trusted clients only, and save your place before big changes.
+> The agent edits your place directly. Connect trusted clients only, and **save or publish a version before big changes** — File → Version History can restore any published version.
 
-To persist player data while testing, enable **Game Settings → Security → Enable Studio Access to API Services** (otherwise `DataService` keeps data in memory).
+To persist player data while testing, publish the place once and enable **Game Settings → Security → Enable Studio Access to API Services** (otherwise `DataService` keeps data in memory).
 
 ---
 
 ## 📦 What's inside
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="Architecture: agent edits files, Rojo syncs to Studio, Studio MCP verifies" width="100%">
+  <img src="docs/assets/architecture.svg" alt="Your agent works in Roblox Studio through the Studio MCP" width="100%">
 </p>
 
 | Delivery area | Contents |
 |---|---|
-| **Skills** (`skills/`) | 26 portable `SKILL.md` skills — loaded on demand, so they cost nothing until needed |
-| **Game template** (`template/`) | Rojo project with server/client bootstraps (`Init` → `Start`), session-locked `DataService`, `Net` + `Guard` + `RateLimiter` secure remotes, `Signal`, `Trove`, example shop + HUD |
-| **3D DevTools** (`template/src/dev/`) | `Build` (walls with openings, stairs, palettes, z-fighting audit, undo) and `Shots` (camera framing for screenshot reviews) |
-| **Agent rules** (`agent/`) | Lean `AGENTS.md` (Codex & others) and `CLAUDE.md` (Claude Code) with non-negotiables and token-economy rules |
-| **CLI** (`tools/rbxkit.mjs`) | Zero-dependency: `init`, `install`, `new`, Roblox lint (`check`), official docs lookup (`docs`), `mcp`, `doctor` |
-| **Verification** (`.github/workflows/ci.yml`) | `rojo build`, **luau-lsp strict type check against the Roblox API**, Selene, Lune unit tests, CLI tests, token budget test |
+| **Skills** (`skills/`) | 25 portable `SKILL.md` skills — loaded on demand, so they cost nothing until needed |
+| **Agent rules** (`agent/`) | Lean `AGENTS.md` (Codex & others) and `CLAUDE.md` (Claude Code): how to work in Studio, non-negotiables, token-economy rules |
+| **Studio modules** (`studio/`) | The code installed into your place: server/client bootstraps (`Init` → `Start`), session-locked `DataService`, `Net` + `Guard` + `RateLimiter` secure remotes, `Signal`, `Trove`, and DevTools (`Build`, `Shots`, `Lint`) |
+| **Installers** (`rbxkit init` → `install/`) | 5 idempotent Luau scripts the agent runs with `execute_luau`; comments stripped to save tokens; existing scripts are never overwritten |
+| **CLI** (`tools/rbxkit.mjs`) | Zero-dependency: `init`, official docs lookup (`docs`), `mcp`, `doctor` |
+| **Verification** (`.github/workflows/ci.yml`) | Strict `luau-lsp` type check against the Roblox API, Selene, Lune unit tests, installers executed in a simulated DataModel, CLI and token-budget tests |
+
+### What gets installed in your place
+
+```text
+ServerScriptService
+  Server (Script)              bootstrap: requires Services, Init() then Start()
+    Config.DataTemplate        saved data shape
+    Services.DataService       UpdateAsync + session lock + retries + autosave
+ReplicatedStorage
+  Shared
+    Net                        named remotes with validation + rate limits
+    Util.Guard · Util.RateLimiter · Util.Signal · Util.Trove
+StarterPlayer.StarterPlayerScripts
+  Client (LocalScript)         bootstrap for Controllers
+ServerStorage
+  DevTools                     Build · Shots · Lint  (Studio-only, never runs live)
+```
 
 ### Skills
 
@@ -215,14 +217,13 @@ To persist player data while testing, enable **Game Settings → Security → En
 `roblox-text-chat`<br>
 `roblox-teleport-matchmaking`<br>
 `roblox-open-cloud`<br>
-`roblox-tooling`<br>
 `roblox-creator-store-security-audit`
 
 </td>
 </tr>
 </table>
 
-Eleven skills come from [EL4CTEO/roblox-skills](https://github.com/EL4CTEO/roblox-skills) and one from [AshExplained/roblox-skills](https://github.com/AshExplained/roblox-skills) (MIT) — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Also worth a look: Roblox's official [roblox-studio-agent-plugin](https://github.com/Roblox/roblox-studio-agent-plugin) and [nonlooped/roblox-suite](https://github.com/nonlooped/roblox-suite).
+Ten skills come from [EL4CTEO/roblox-skills](https://github.com/EL4CTEO/roblox-skills) and one from [AshExplained/roblox-skills](https://github.com/AshExplained/roblox-skills) (MIT) — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Also worth a look: Roblox's official [roblox-studio-agent-plugin](https://github.com/Roblox/roblox-studio-agent-plugin).
 
 ---
 
@@ -254,36 +255,14 @@ return B.summary(B.audit(workspace.Cottage))         -- "parts=13 meshParts=0 un
 
 ---
 
-## 🪙 Built to save tokens (without losing quality)
+## 🔎 Lint inside Studio
 
-| Technique | Effect |
-|---|---|
-| Skills load on demand; only names + one-line descriptions are always in context | ~2.2k tokens per session for 26 skills + rules |
-| Lean `AGENTS.md` (no duplicated skill table) + English everywhere | −38% always-loaded context vs. the first version |
-| Progressive disclosure: deep recipes live in `references/` | Large tables load only for the exact case |
-| `rbxkit docs --api Class:Member` returns just one member from the official docs | A few hundred tokens instead of multi-thousand-token class pages — and no hallucinated APIs |
-| DevTools `Build`/`Shots` | One `B.wall{}` call instead of dozens of `Instance.new` lines; text audits before screenshots |
-| A token-budget test in CI | Prevents skills and rules from silently growing |
+`DevTools.Lint` checks every script in the place for the mistakes agents (and humans) make most — the agent runs it before calling anything done:
 
----
-
-## 🛠 The `rbxkit` CLI
-
-Inside a project: `node tools/rbxkit.mjs <command>`
-
-```text
-init <dir> [--name Name]            create a new game
-install [dir] [--force]             add skills/AGENTS.md to an existing project
-new service|controller|module <Name>
-check [paths] [--json] [--strict]   Roblox lint (exit 1 on errors)
-docs "<question in English>"        search the official Roblox docs
-docs --api Class[:member]           API reference (TweenService:Create, task.wait, CFrame.new)
-docs --deprecated <Name>            deprecated? what replaces it?
-mcp [--client claude|codex] [--os windows|mac] [--write]
-doctor                              check rojo/selene/stylua/claude/codex
+```lua
+local Lint = require(game:GetService("ServerStorage").DevTools.Lint)
+return Lint.summary(Lint.run())   -- "14 scripts: 0 error(s), 1 warning(s), 0 info" + one line per finding
 ```
-
-### `rbxkit check` — Roblox-aware lint
 
 | Severity | Catches |
 |---|---|
@@ -295,23 +274,32 @@ Silence a line with `-- rbxkit-ignore: rule`, or the next one with `-- rbxkit-ig
 
 ---
 
-## 🗂 Template layout
+## 🪙 Built to save tokens (without losing quality)
+
+| Technique | Effect |
+|---|---|
+| Skills load on demand; only names + one-line descriptions are always in context | ~2k tokens per session for 25 skills + rules |
+| Lean `AGENTS.md` + English everywhere | Small always-loaded context |
+| Progressive disclosure: deep recipes live in `references/` | Large tables load only for the exact case |
+| `rbxkit docs --api Class:Member` returns just one member from the official docs | A few hundred tokens instead of multi-thousand-token class pages — and no hallucinated APIs |
+| Edits with `multi_edit` and narrow `script_grep`/`script_read` | No rewriting or re-reading whole scripts |
+| DevTools `Build`/`Shots`/`Lint` | One `B.wall{}` call instead of dozens of `Instance.new` lines; text audits before screenshots |
+| Installers with comments stripped; DevTools only when needed | One-time setup cost per place |
+| A token-budget test in CI | Prevents skills and rules from silently growing |
+
+---
+
+## 🛠 The `rbxkit` CLI
+
+`npx github:gustavopiumbini/robloxcodingtoolkit <command>` — or `node tools/rbxkit.mjs <command>` inside an agent folder:
 
 ```text
-src/
-  server/                     → ServerScriptService.Server
-    init.server.luau            bootstrap: require Services/, Init() then Start()
-    Config/DataTemplate.luau    saved data shape
-    Services/                   DataService · CoinService · ShopService
-  client/                     → StarterPlayerScripts.Client
-    init.client.luau            bootstrap for Controllers/
-    Controllers/HudController.luau
-  shared/                     → ReplicatedStorage.Shared
-    Net.luau                    named remotes with validation + rate limits
-    Config/Items.luau
-    Util/                       Guard · RateLimiter · Signal · Trove
-  dev/                        → ServerStorage.DevTools (Studio-only tooling)
-    Build.luau · Shots.luau
+init [dir] [--force]                set up an agent folder: skills, AGENTS.md, CLAUDE.md, install/*.luau
+docs "<question in English>"        search the official Roblox docs
+docs --api Class[:member]           API reference (TweenService:Create, task.wait, CFrame.new)
+docs --deprecated <Name>            deprecated? what replaces it?
+mcp [--client claude|codex] [--os windows|mac] [--write]
+doctor                              check Node, Claude Code/Codex, Studio and the agent folder
 ```
 
 ---
@@ -319,13 +307,14 @@ src/
 ## 🧪 Developing the toolkit
 
 ```bash
-npm test                                  # CLI, skills and token budget (node:test)
-npm run check:template                    # the template must pass its own lint
-lune run tests/luau/utils.spec.luau       # Guard, RateLimiter, Signal, Trove
-lune run tests/luau/build.spec.luau       # Build geometry + audit (Lune Roblox datatypes)
+npm test                                         # CLI, installers, skills, token budget (node:test)
+lune run tests/luau/utils.spec.luau              # Guard, RateLimiter, Signal, Trove
+lune run tests/luau/build.spec.luau              # Build geometry + audit
+lune run tests/luau/lint.spec.luau               # Lint rules + lint of every studio/ script
+node tools/rbxkit.mjs init /tmp/agent && lune run tests/luau/install.spec.luau /tmp/agent/install
 ```
 
-CI also runs `rojo build`, a strict `luau-lsp` type check against the Roblox API definitions, and Selene.
+`studio/` mirrors the DataModel (`studio/ServerScriptService/Server/init.server.luau` → `ServerScriptService.Server`). CI also type-checks it with `luau-lsp` in strict mode against the Roblox API (sourcemap generated by `tests/sourcemap.mjs`) and runs Selene.
 
 ## License
 

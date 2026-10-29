@@ -5,7 +5,7 @@
 	The SERVER creates remotes in ReplicatedStorage.Remotes; CLIENTS wait for them.
 	Always use Net.Names to avoid typos.
 
-	-- Server
+	-- Server (add BuyItem = "BuyItem" to Net.Names first)
 	Net.onServerEvent(Net.Names.BuyItem, {
 		check = Guard.tuple(Guard.keyOf(Items)),
 		rate = 2, burst = 4,
@@ -32,9 +32,7 @@ local Net = {}
 
 -- Register EVERY remote in the game here.
 Net.Names = table.freeze({
-	BuyItem = "BuyItem",
-	Notify = "Notify",
-	GetShopData = "GetShopData",
+	Notify = "Notify", -- generic server -> client message (e.g. toasts)
 })
 
 local folder: Folder? = nil

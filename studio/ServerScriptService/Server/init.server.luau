@@ -4,15 +4,17 @@
 	  1. Service:Init()  - alphabetical, synchronous (prepare state, create remotes)
 	  2. Service:Start() - in parallel, after ALL Init calls finished
 
-	New service: node tools/rbxkit.mjs new service Name
+	New service: add a ModuleScript to Services (see the roblox-architecture skill).
 ]]
 
-local servicesFolder = script:WaitForChild("Services")
+local servicesFolder = script:FindFirstChild("Services")
 
 local modules: { ModuleScript } = {}
-for _, child in servicesFolder:GetChildren() do
-	if child:IsA("ModuleScript") then
-		table.insert(modules, child)
+if servicesFolder then
+	for _, child in servicesFolder:GetChildren() do
+		if child:IsA("ModuleScript") then
+			table.insert(modules, child)
+		end
 	end
 end
 table.sort(modules, function(a, b)

@@ -1,31 +1,28 @@
-# One-prompt setup: existing Roblox project
+# One-prompt setup: existing Roblox game
 
-You are an AI coding agent (Claude Code, Codex, or similar). Add the Roblox Vibe Coding Toolkit to the user's existing Roblox project without breaking anything, then do the task that came with this file (if any). Work autonomously; stop to ask only where this file says **ASK**. Reply in the user's language.
+You are an AI coding agent (Claude Code, Codex, or similar). The user has a Roblox game in Studio. Add the Roblox Vibe Coding Toolkit without breaking anything, then do the task that came with this file (if any). You work **directly in Studio through the Studio MCP**. Stop to ask only where this file says **ASK**. Reply in the user's language.
 
-## 1. Inspect (read-only)
+## 1. Agent folder
 
-- Find the project root and how code reaches Studio: Rojo (`*.project.json`), Argon, Studio Script Sync, or no files at all (code only inside the place).
-- Map the layout: where server, client and shared code live; frameworks (Knit, Matter, Fusion, ProfileStore...); package manager (Wally); existing `AGENTS.md`/`CLAUDE.md`; git status (uncommitted work?).
-- Check tools: `node` 18+, `rokit`, `rojo`, Studio MCP tools available to you.
+Run `npx --yes github:gustavopiumbini/robloxcodingtoolkit init .` in the current folder (keeps an existing `AGENTS.md`/`CLAUDE.md`; then append a short "Roblox toolkit" section to them pointing to the skills and `install/`). Read `AGENTS.md`.
 
-## 2. Install the toolkit (non-destructive)
+## 2. Connect Studio
 
-- Uncommitted changes → **ASK** whether to commit first.
-- `npx --yes github:gustavopiumbini/robloxcodingtoolkit install .` (adds skills to `.claude/skills/` and `.agents/skills/`, `AGENTS.md`/`CLAUDE.md` only if missing, `tools/rbxkit.mjs`). Never pass `--force` over existing agent files.
-- If the project already had `AGENTS.md`/`CLAUDE.md`: append a short "Roblox toolkit" section pointing to the skills and `tools/rbxkit.mjs` commands instead of replacing them.
-- Rewrite the **Map** section of `AGENTS.md` to match this project's real layout and frameworks. If the project uses different patterns than the template (e.g. Knit instead of Init/Start bootstraps, ProfileStore instead of DataService), state in `AGENTS.md` that the project's patterns win.
-- Optional, only if they fit: copy `Util/Guard`, `Util/RateLimiter`, `Util/Signal`, `Util/Trove` from the toolkit `template/src/shared/` and `template/src/dev/` (DevTools for 3D building) into the matching folders.
+Studio MCP tools missing → give the user the steps from https://raw.githubusercontent.com/gustavopiumbini/robloxcodingtoolkit/main/docs/prompts/new-game.md (step 3) and stop until they say "continue Roblox setup". Connected → `list_roblox_studios` (**ASK** if several) and `get_studio_state` (edit mode).
 
-## 3. Baseline audit
+## 3. Inspect the game (read-only, narrow reads)
 
-- `node tools/rbxkit.mjs check` over the source folders; summarize by severity (don't fix yet).
-- If the project has no files on disk (Studio-only), explain the trade-off and **ASK** whether to set up Rojo (export the scripts to files) or keep editing through Studio MCP.
+- `search_game_tree` for scripts in ServerScriptService, ReplicatedStorage, StarterPlayer, StarterGui, Workspace; note frameworks (Knit, ProfileStore, Fusion…), existing remotes and data handling.
+- Write a short "Map" of the real layout into `AGENTS.md`, replacing the template map. If the game uses other patterns (Knit, ProfileStore…), state that the game's patterns win.
 
-## 4. Connect Studio
+## 4. Install the toolkit modules (non-destructive)
 
-Same as the new-game recipe: Rojo plugin (`rojo plugin install`) + `rojo serve` (background) when the project uses Rojo; Studio MCP via Assistant → Manage MCP Servers → Quick connect, then restart the agent and say "continue Roblox setup".
+**ASK** the user to save/publish a version first. Then run `install/5-lint.luau` and `install/4-build-tools.luau` (DevTools only — they live in `ServerStorage` and never run live). Install `1-shared` (Net, Guard, RateLimiter, Signal, Trove) only if it doesn't clash with names in `ReplicatedStorage`, and `2-server`/`3-client` bootstraps only if the game has no framework of its own — **ASK** first. Installers never overwrite existing scripts.
 
-## 5. Task and hand-over
+## 5. Baseline audit
 
-- If the user gave a task, do it with the `roblox-feature` skill (or `roblox-review` for audits, `roblox-debug` for errors).
-- Final message: what was installed/changed, the audit summary with the top 3 fixes, what you verified, and 3 suggested next prompts.
+`local L = require(game.ServerStorage.DevTools.Lint) return L.summary(L.run(), 60)` → summarize by severity (don't fix yet). Also check for backdoors in models (`roblox-creator-store-security-audit`).
+
+## 6. Task and hand-over
+
+If the user gave a task, do it with `roblox-feature` (or `roblox-review` for audits, `roblox-debug` for errors). Final message: what was installed/changed, the audit summary with the top 3 fixes, what you verified, a reminder to save/publish, and 3 suggested next prompts.

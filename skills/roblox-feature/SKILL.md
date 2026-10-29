@@ -7,33 +7,27 @@ description: End-to-end workflow for a Roblox feature from a plain-language requ
 
 ## 1. Understand (fast)
 
-Read `default.project.json`, list `src/` (services, `Net.Names`, Config). Vague request → assume the most common pattern in popular Roblox games and state it in one line. Ask only questions that change the design.
+Look at what exists with narrow reads: `search_game_tree` for `Server.Services`, `Client.Controllers`, `Shared` (run the `install/` installers if the toolkit modules are missing), and `script_grep` for `Net.Names`. Vague request → assume the most common pattern in popular Roblox games and state it in one line. Ask only questions that change the design.
 
 ## 2. Plan (3-8 lines to the user)
 
 - **Server**: which Service, saved data (DataTemplate), validations.
 - **Remotes**: names in `Net.Names`, args and their `Guard`. Minimal client data.
-- **Shared**: what goes in `src/shared/Config/`.
+- **Shared**: what goes in `ReplicatedStorage.Shared.Config`.
 - **Client**: Controller, UI, input, effects.
 - **Studio**: parts/tags/assets the user must create or provide; geometry via `roblox-3d-building`.
 
 ## 3. Implement
 
-- Skeletons: `node tools/rbxkit.mjs new service|controller|module <Name>`.
+- New scripts via `execute_luau` (ModuleScripts in `Server.Services` / `Client.Controllers` with `Init`/`Start`); edits via `multi_edit`.
 - Load only the skills the task needs (e.g. `roblox-networking` for remotes, `roblox-datastore` for saved data, `roblox-ui` for screens). Read their `references/` only when the SKILL.md points you there for your exact case.
 - Unsure about an API → `node tools/rbxkit.mjs docs --api Class:Member` instead of guessing.
 - Balance numbers as constants or in `Config`. Keep files focused; don't rewrite unrelated files.
 
 ## 4. Verify (required before "done")
 
-```
-node tools/rbxkit.mjs check     # Roblox lint (deprecated APIs, unvalidated remotes, ...)
-selene src                      # if installed (rokit install)
-stylua --check src              # if installed; `stylua src` to format
-rojo build -o build.rbxl        # if installed: the project assembles
-```
-
-Fix every error; fix or justify warnings. With Studio MCP: the `roblox-studio-mcp` verify loop. Without it: give short manual test steps ("run `rojo serve`, connect, press Play, click X, expect Y").
+1. Lint in Studio: `local L = require(game.ServerStorage.DevTools.Lint) return L.summary(L.run())` → 0 errors; fix or justify warnings.
+2. Play test with the `roblox-studio-mcp` verify loop: zero errors in Output, exercise the feature (`execute_luau`, simulated input), screenshots for UI/visuals.
 
 ## 5. Report
 
