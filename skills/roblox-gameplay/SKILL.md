@@ -1,100 +1,49 @@
 ---
 name: roblox-gameplay
-description: Receitas de sistemas de gameplay no Roblox - personagens e Humanoid, ferramentas (Tools), combate e hitboxes, projéteis com raycast, NPCs com PathfindingService, sistema de rounds, checkpoints/obby, coletáveis com CollectionService, física e network ownership, animações e sons. Use ao implementar mecânicas de jogo.
+description: Gameplay system recipes - collectibles with CollectionService tags, melee/ranged combat flow, round systems, obby checkpoints, tools. Use when implementing game mechanics; pairs with roblox-physics, roblox-npc-ai and roblox-characters-animation.
 ---
 
-# Receitas de gameplay
+# Gameplay recipes
 
-Todas as receitas seguem: servidor tem a autoridade, cliente dá feedback imediato.
+Server is authoritative; client gives instant feedback. Related depth: `roblox-characters-animation` (Humanoid, spawning, animation), `roblox-physics` (raycasts, constraints, ownership), `roblox-npc-ai` (pathfinding, behavior).
 
-## Personagem
+## Collectibles via tags
 
-```lua
-Players.PlayerAdded:Connect(function(player)
-	player.CharacterAdded:Connect(function(character)
-		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-		local root = character:WaitForChild("HumanoidRootPart") :: BasePart
-		humanoid.Died:Connect(function() ... end)
-	end)
-end)
-```
-
-- Velocidade/pulo: `humanoid.WalkSpeed`, `humanoid.JumpPower` (ou `JumpHeight` se `UseJumpPower=false`). Mude no servidor.
-- Respawn: `Players.RespawnTime`, `player:LoadCharacter()`.
-- Teleporte: `character:PivotTo(cframe)` (servidor).
-- Ponto de spawn por time/checkpoint: `SpawnLocation` com `TeamColor`, ou `player.RespawnLocation`.
-
-## Coletáveis e objetos marcados (CollectionService)
-
-No Studio, marque as partes com a tag `Coin` (Tag Editor / Properties > Tags).
+Tag parts `Coin` in Studio (Tag Editor / Properties > Tags):
 
 ```lua
-local CollectionService = game:GetService("CollectionService")
 local function setup(part: BasePart)
-	local debounce = false
+	local busy = false
 	part.Touched:Connect(function(hit)
-		if debounce then return end
 		local player = Players:GetPlayerFromCharacter(hit.Parent)
-		if not player then return end
-		debounce = true
+		if busy or not player then return end
+		busy = true
 		CoinService:Add(player, 1)
 		part.Transparency = 1
-		task.delay(10, function() part.Transparency = 0; debounce = false end)
+		task.delay(10, function() part.Transparency = 0; busy = false end)
 	end)
 end
 for _, p in CollectionService:GetTagged("Coin") do setup(p) end
 CollectionService:GetInstanceAddedSignal("Coin"):Connect(setup)
 ```
 
-## Combate corpo a corpo
+## Combat
 
-1. Cliente: input -> animação -> `FireServer` com o alvo (ou nada, e o servidor faz a hitbox).
-2. Servidor: cooldown por jogador, hitbox autoritativa com `workspace:GetPartBoundsInBox(cframe, size, overlapParams)` à frente do `HumanoidRootPart`, filtra personagens únicos, aplica `humanoid:TakeDamage(dano)`.
-3. `OverlapParams.FilterDescendantsInstances = { attackerCharacter }` com `FilterType = Exclude`.
+- Melee: client input → animation → `FireServer` (intent). Server: per-player cooldown, authoritative hitbox `workspace:GetPartBoundsInBox(cframe, size, overlapParams)` in front of the `HumanoidRootPart` (exclude attacker), unique characters, `humanoid:TakeDamage(damage)`.
+- Ranged: client raycasts for instant tracers; server validates `origin` near the shooter's head and a finite unit `direction`, re-raycasts excluding the shooter, applies damage, enforces fire rate. Slow projectiles: simulate on the server, render on clients.
 
-## Projéteis / armas de fogo
+## Round system
 
-- Cliente: raycast local para efeito instantâneo (tracer, impacto).
-- Servidor: recebe `origin` e `direction` (valide: `origin` perto da cabeça do atirador, direção unitária finita), refaz `workspace:Raycast` com `RaycastParams` excluindo o atirador, aplica dano. Limite cadência no servidor.
-- Projéteis lentos: simule no servidor (posição por tempo) e replique visual pelos clientes; evite partes físicas com ownership do cliente.
+Server state machine `Intermission → Starting → Playing → Ended`. Publish `workspace:SetAttribute("RoundState", ...)` and `"RoundEndsAt"` (`workspace:GetServerTimeNow() + duration`) so clients compute timers locally (no per-second remote). One `Trove` per round for map, connections and players.
 
-## NPC com pathfinding
+## Obby checkpoints
 
-```lua
-local PathfindingService = game:GetService("PathfindingService")
-local path = PathfindingService:CreatePath({ AgentRadius = 2, AgentHeight = 5, AgentCanJump = true })
-local ok = pcall(path.ComputeAsync, path, npcRoot.Position, targetPosition)
-if ok and path.Status == Enum.PathStatus.Success then
-	for _, waypoint in path:GetWaypoints() do
-		if waypoint.Action == Enum.PathWaypointAction.Jump then humanoid.Jump = true end
-		humanoid:MoveTo(waypoint.Position)
-		humanoid.MoveToFinished:Wait() -- trate timeout (8 s) e recalcule se path.Blocked
-	end
-end
-```
+`Checkpoint` parts with a `Stage` attribute. On touch, only advance when `stage == current + 1`. Save `Stage` in DataService; respawn there (`player.RespawnLocation` or `PivotTo` on `CharacterAdded`). Gaps/heights: `roblox-3d-building/references/scale.md`.
 
-NPC deve ter `root:SetNetworkOwner(nil)` para não engasgar. Recalcule o caminho a cada ~0.5-1 s quando persegue, não a cada frame. Muitos NPCs: um loop central em vez de um script por NPC.
+## Tools
 
-## Sistema de rounds
+Give with `tool:Clone().Parent = player.Backpack` (server). `tool.Activated` in a LocalScript for feedback; the server validates and applies. `RequiresHandle = false` for handle-less tools.
 
-Máquina de estados no servidor: `Intermission -> Starting -> Playing -> Ended`. Exponha o estado em `workspace:SetAttribute("RoundState", ...)` e `"RoundEndsAt"` (`workspace:GetServerTimeNow() + duração`) — o cliente calcula o timer localmente, sem remote por segundo. Use um `Trove` por round para limpar mapa, conexões e jogadores.
+## Assets
 
-## Obby / checkpoints
-
-Partes `Checkpoint` com atributo `Stage` (número). No `Touched`, só avance se `stage == atual + 1` (evita pular). Salve `Stage` no DataService e use como spawn (`player.RespawnLocation` ou `PivotTo` no CharacterAdded).
-
-## Ferramentas (Tools)
-
-Tool em `StarterPack` ou dada por `tool:Clone().Parent = player.Backpack` (servidor). `tool.Activated` no LocalScript para feedback; no servidor valide e aplique efeito. `RequiresHandle = false` para ferramentas sem parte.
-
-## Física
-
-- Partes estáticas: `Anchored = true`. Muitas partes soltas = lag.
-- Constraints modernos: `LinearVelocity`, `AlignPosition`, `AlignOrientation`, `HingeConstraint`, `SpringConstraint`, `VectorForce`.
-- Grupos de colisão: `PhysicsService:RegisterCollisionGroup` + `part.CollisionGroup = "Nome"`.
-
-## Animação e som
-
-- `Animator:LoadAnimation(animation)` (Animator dentro do Humanoid/AnimationController). Anims do personagem do jogador podem rodar no cliente (replicam).
-- Sons: `SoundService`/`Sound` em partes (som 3D) ou em `SoundService` (2D). `SoundService:PlayLocalSound` para UI.
-- Ids de assets (`rbxassetid://`) precisam ser do criador do jogo ou públicos; peça ao usuário os ids ou use placeholders claramente marcados com `-- TODO: id`.
+`rbxassetid://` ids must belong to the creator or be public. Ask the user for ids or use clearly marked placeholders (`-- TODO: asset id`).

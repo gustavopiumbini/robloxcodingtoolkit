@@ -268,8 +268,8 @@ function Build.wall(parent: Instance, props: WallProps): Model
 		Build.part(model, segment)
 	end
 
-	local openings = table.clone(props.openings or {})
-	table.sort(openings, function(a, b)
+	local openings: { Opening } = table.clone(props.openings or {})
+	table.sort(openings, function(a: Opening, b: Opening)
 		return a.offset < b.offset
 	end)
 
@@ -370,7 +370,8 @@ function Build.undoable(name: string, fn: () -> ())
 	local okBegin, recording = pcall(function()
 		return ChangeHistoryService:TryBeginRecording(name)
 	end)
-	local ok, err = pcall(fn)
+	local result = table.pack(pcall(fn))
+	local ok, err = result[1], result[2]
 	if okBegin and recording then
 		ChangeHistoryService:FinishRecording(
 			recording,

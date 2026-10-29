@@ -1,15 +1,15 @@
 --!strict
 --[[
-	Trove: rastreia objetos para limpar todos de uma vez (evita memory leaks).
+	Trove: tracks objects and cleans them all at once (prevents memory leaks).
 
 	local trove = Trove.new()
 	trove:Add(part)                                   -- Instance -> :Destroy()
 	trove:Connect(part.Touched, onTouched)            -- RBXScriptConnection -> :Disconnect()
-	trove:Add(function() print("limpo") end)          -- função -> chamada
+	trove:Add(function() print("cleaned") end)        -- function -> called
 	trove:Add(task.delay(5, fn))                      -- thread -> task.cancel()
-	trove:Clean()                                     -- limpa tudo (reutilizável)
+	trove:Clean()                                     -- cleans everything (reusable)
 
-	Use um Trove por "vida útil": por jogador, por personagem, por round, por UI.
+	Use one Trove per lifetime: per player, per character, per round, per UI.
 ]]
 
 export type Trove = {
@@ -47,10 +47,10 @@ local function cleanup(entry: Entry)
 		elseif type(object.Disconnect) == "function" then
 			object:Disconnect()
 		else
-			error("Trove: tabela sem método Destroy/Disconnect")
+			error("Trove: table has no Destroy/Disconnect method")
 		end
 	else
-		error(`Trove: não sei limpar objeto do tipo {kind}`)
+		error(`Trove: cannot clean an object of type {kind}`)
 	end
 end
 
@@ -61,7 +61,7 @@ end
 
 function Trove.Add(self: any, object: any, cleanupMethod: string?): any
 	if self._cleaning then
-		error("Trove: não é possível adicionar durante Clean()")
+		error("Trove: cannot Add during Clean()")
 	end
 	table.insert(self._entries, { object = object, method = cleanupMethod })
 	return object
@@ -91,7 +91,7 @@ function Trove.Clean(self: any)
 		return
 	end
 	self._cleaning = true
-	-- Ordem reversa: o que foi criado por último é destruído primeiro.
+	-- Reverse order: last created is destroyed first.
 	local entries = self._entries
 	self._entries = {}
 	for i = #entries, 1, -1 do

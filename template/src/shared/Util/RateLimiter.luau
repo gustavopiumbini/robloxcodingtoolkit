@@ -1,12 +1,12 @@
 --!strict
 --[[
-	RateLimiter: token bucket por chave (ex.: por jogador).
+	RateLimiter: token bucket per key (e.g. per player).
 
-	local limiter = RateLimiter.new(5, 10) -- 5 req/s, rajada de até 10
+	local limiter = RateLimiter.new(5, 10) -- 5 req/s, bursts up to 10
 	if not limiter:Allow(player) then return end
 
-	Lembre de chamar limiter:Clear(player) no PlayerRemoving
-	(Net.onServerEvent já faz isso automaticamente).
+	Call limiter:Clear(player) on PlayerRemoving
+	(Net.onServerEvent does this automatically).
 ]]
 
 export type RateLimiter = {
@@ -21,9 +21,9 @@ local RateLimiter = {}
 RateLimiter.__index = RateLimiter
 
 function RateLimiter.new(ratePerSecond: number, burst: number?, clock: (() -> number)?): RateLimiter
-	assert(ratePerSecond > 0, "ratePerSecond precisa ser > 0")
+	assert(ratePerSecond > 0, "ratePerSecond must be > 0")
 	local capacity = burst or ratePerSecond
-	assert(capacity >= 1, "burst precisa ser >= 1")
+	assert(capacity >= 1, "burst must be >= 1")
 	local self = setmetatable({
 		_rate = ratePerSecond,
 		_capacity = capacity,

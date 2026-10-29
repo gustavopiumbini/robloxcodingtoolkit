@@ -1,6 +1,6 @@
 ---
 name: roblox-testing
-description: Testing Roblox code - testable modules with dependency injection, Jest Lua (runCLI, .spec files), legacy TestEZ, running tests in Studio, via Studio MCP, run-in-roblox, or CI with Open Cloud Luau Execution, Lune for pure Luau, multi-client playtests, QA checklist. Use when adding tests, setting up a test runner or CI, or verifying a gameplay change works.
+description: Testing Roblox code - testable modules, Jest Lua, TestEZ, Lune, Studio MCP and Open Cloud test runs, multi-client playtests, QA checklist. Use when adding tests, a test runner or CI, or verifying gameplay.
 ---
 
 # Testing Roblox games

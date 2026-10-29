@@ -1,6 +1,6 @@
 --!strict
--- Exemplo: dá moedas por tempo de jogo e espelha o saldo em leaderstats e
--- em um Attribute do Player (o cliente lê o Attribute para atualizar a HUD).
+-- Example: awards coins for play time and mirrors the balance to leaderstats and
+-- a Player attribute (the client reads the attribute to update the HUD).
 
 local Players = game:GetService("Players")
 
@@ -35,7 +35,7 @@ function CoinService:Add(player: Player, amount: number): boolean
 	end)
 end
 
--- Debita somente se houver saldo. Retorna true se debitou.
+-- Spends only if the balance allows. Returns true if spent.
 function CoinService:TrySpend(player: Player, amount: number): boolean
 	local data = DataService:Get(player)
 	if not data or data.Coins < amount then
@@ -47,7 +47,7 @@ function CoinService:TrySpend(player: Player, amount: number): boolean
 end
 
 function CoinService:Init()
-	-- Conecte no Init: garante que nenhum Loaded é perdido antes do Start.
+	-- Connect in Init so no Loaded event is missed before Start.
 	DataService.Loaded:Connect(function(player, data)
 		createLeaderstats(player)
 		syncCoins(player, data.Coins)

@@ -1,6 +1,6 @@
 ---
 name: roblox-physics
-description: Physics and spatial queries - Raycast/Blockcast/Spherecast, overlap queries, collision groups, Touched pitfalls, collision summaries (impact point/normal/speed), assemblies and welds, mover constraints replacing BodyMovers, mechanical constraints, network ownership, CFrame math, vehicles/projectiles, and server authority (BindToSimulation, prediction, rollback). Use when moving parts, detecting hits, building vehicles or projectiles, or fixing jitter, flinging, or ownership bugs.
+description: Physics and spatial queries - Raycast/Blockcast/overlap queries, collision groups, assemblies, constraints and movers, network ownership, server-authoritative physics. Use for hit detection, vehicles, moving platforms or physics bugs.
 ---
 
 # Roblox physics and spatial queries

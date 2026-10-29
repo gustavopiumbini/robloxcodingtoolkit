@@ -1,11 +1,11 @@
 --!strict
 --[[
-	Net: criação e uso de remotes com validação e rate limit embutidos.
+	Net: create and use remotes with built-in validation and rate limiting.
 
-	O SERVIDOR cria os remotes em ReplicatedStorage.Remotes; o CLIENTE espera
-	por eles. Use sempre os nomes de Net.Names para evitar typos.
+	The SERVER creates remotes in ReplicatedStorage.Remotes; CLIENTS wait for them.
+	Always use Net.Names to avoid typos.
 
-	-- Servidor
+	-- Server
 	Net.onServerEvent(Net.Names.BuyItem, {
 		check = Guard.tuple(Guard.keyOf(Items)),
 		rate = 2, burst = 4,
@@ -13,7 +13,7 @@
 		...
 	end)
 
-	-- Cliente
+	-- Client
 	Net.event(Net.Names.BuyItem):FireServer("Sword")
 ]]
 
@@ -30,7 +30,7 @@ local WAIT_TIMEOUT = 30
 
 local Net = {}
 
--- Registre aqui TODOS os remotes do jogo.
+-- Register EVERY remote in the game here.
 Net.Names = table.freeze({
 	BuyItem = "BuyItem",
 	Notify = "Notify",
@@ -100,8 +100,8 @@ export type HandlerOptions = {
 }
 
 local function makeGate(name: string, options: HandlerOptions)
-	assert(IS_SERVER, "Net: handlers de servidor só podem ser criados no servidor")
-	assert(type(options.check) == "function", `Net: {name} precisa de options.check (use Guard.tuple)`)
+	assert(IS_SERVER, "Net: server handlers can only be created on the server")
+	assert(type(options.check) == "function", `Net: {name} needs options.check (use Guard.tuple)`)
 	local limiter = RateLimiter.new(options.rate or 10, options.burst)
 	Players.PlayerRemoving:Connect(function(player)
 		limiter:Clear(player)
@@ -112,18 +112,18 @@ local function makeGate(name: string, options: HandlerOptions)
 		end
 		local ok, err = options.check(...)
 		if not ok then
-			warn(`[Net] {player.Name} enviou argumentos inválidos para {name}: {err}`)
+			warn(`[Net] {player.Name} sent invalid arguments to {name}: {err}`)
 			return false
 		end
 		return true
 	end
 end
 
--- Conecta um handler de RemoteEvent com rate limit + validação.
+-- Connects a RemoteEvent handler with rate limiting + validation.
 function Net.onServerEvent(name: string, options: HandlerOptions, handler: (Player, ...any) -> ()): RBXScriptConnection
 	local gate = makeGate(name, options)
 	local remote: any = if options.unreliable then Net.unreliable(name) else Net.event(name)
-	-- rbxkit-ignore-next-line: remote-without-validation (validado por gate)
+	-- rbxkit-ignore-next-line: remote-without-validation (validated by gate)
 	return remote.OnServerEvent:Connect(function(player: Player, ...)
 		if gate(player, ...) then
 			handler(player, ...)
@@ -131,11 +131,11 @@ function Net.onServerEvent(name: string, options: HandlerOptions, handler: (Play
 	end)
 end
 
--- Define o callback de um RemoteFunction com rate limit + validação.
--- Retorna nil para requisições rejeitadas. Nunca use InvokeClient no servidor.
+-- Sets a RemoteFunction callback with rate limiting + validation.
+-- Returns nil for rejected requests. Never use InvokeClient on the server.
 function Net.onServerInvoke(name: string, options: HandlerOptions, handler: (Player, ...any) -> ...any)
 	local gate = makeGate(name, options)
-	-- rbxkit-ignore-next-line: remote-without-validation (validado por gate)
+	-- rbxkit-ignore-next-line: remote-without-validation (validated by gate)
 	Net.func(name).OnServerInvoke = function(player: Player, ...)
 		if gate(player, ...) then
 			return handler(player, ...)

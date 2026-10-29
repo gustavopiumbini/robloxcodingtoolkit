@@ -1,6 +1,6 @@
 ---
 name: roblox-world-building
-description: Building worlds with code - parts, models and pivots, materials, Lighting (LightingStyle, Atmosphere, post-processing), day/night, Terrain API, in-game CSG and destruction (GeometryService Subtract/Union/Fragment), ProceduralModel, EditableMesh/EditableImage, particles/beams/trails/highlights. Use when creating maps, environments, lighting, destructible objects, procedural levels, or visual effects.
+description: Building worlds with code - parts/models/pivots, materials, Lighting and atmosphere, Terrain, GeometryService, procedural models, runtime meshes, effects. Use for terrain, lighting and procedural maps (see roblox-3d-building for modeling quality).
 ---
 
 # World building with code

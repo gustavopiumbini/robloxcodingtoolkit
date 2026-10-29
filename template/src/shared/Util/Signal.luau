@@ -1,14 +1,14 @@
 --!strict
 --[[
-	Signal: evento leve em Luau puro (substituto de BindableEvent).
+	Signal: lightweight pure-Luau event (BindableEvent replacement).
 
 	local changed = Signal.new()
 	local conn = changed:Connect(function(value) print(value) end)
 	changed:Fire(10)
 	conn:Disconnect()
 
-	Cada handler roda em sua própria thread (task.spawn), então um erro
-	em um handler não impede os outros de rodarem.
+	Each handler runs in its own thread (task.spawn), so an error in one
+	handler doesn't stop the others.
 ]]
 
 export type Connection = {
@@ -83,7 +83,7 @@ function Signal.Wait(self: any): ...any
 end
 
 function Signal.Fire(self: any, ...: any)
-	-- Copia a lista para que conectar/desconectar durante o Fire seja seguro.
+	-- Snapshot so connecting/disconnecting during Fire is safe.
 	local snapshot: { any } = table.clone(self._handlers)
 	for _, connection in snapshot do
 		if connection.Connected then

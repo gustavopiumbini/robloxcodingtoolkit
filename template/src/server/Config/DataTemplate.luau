@@ -1,6 +1,6 @@
 --!strict
--- Formato dos dados salvos de cada jogador. Campos novos adicionados aqui são
--- preenchidos automaticamente em perfis antigos (reconcile no DataService).
+-- Saved data shape for each player. New fields added here are filled into
+-- existing profiles automatically (reconcile in DataService).
 
 export type PlayerData = {
 	Coins: number,

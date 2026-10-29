@@ -1,9 +1,9 @@
 --!strict
 --[[
-	Bootstrap do cliente. Carrega todos os ModuleScripts em Controllers/ e chama
-	Controller:Init() (ordem alfabética) e depois Controller:Start() (em paralelo).
+	Client bootstrap. Requires every ModuleScript in Controllers/ and calls
+	Controller:Init() (alphabetical), then Controller:Start() (in parallel).
 
-	Para criar um controller: node tools/rbxkit.mjs new controller NomeDoController
+	New controller: node tools/rbxkit.mjs new controller Name
 ]]
 
 local controllersFolder = script:WaitForChild("Controllers")
@@ -24,7 +24,7 @@ for _, module in modules do
 	if ok then
 		table.insert(controllers, { name = module.Name, controller = result })
 	else
-		warn(`[Client] Falha ao carregar {module.Name}: {result}`)
+		warn(`[Client] Failed to load {module.Name}: {result}`)
 	end
 end
 
@@ -32,7 +32,7 @@ for _, entry in controllers do
 	if type(entry.controller.Init) == "function" then
 		local ok, err = pcall(entry.controller.Init, entry.controller)
 		if not ok then
-			warn(`[Client] {entry.name}:Init falhou: {err}`)
+			warn(`[Client] {entry.name}:Init failed: {err}`)
 		end
 	end
 end

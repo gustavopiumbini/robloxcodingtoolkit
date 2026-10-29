@@ -1,6 +1,6 @@
 ---
 name: roblox-creator-store-security-audit
-description: Audit Roblox Creator Store, Toolbox, inventory, group, universe, package, model, UI, gameplay, plugin-like, and other third-party imported assets for malicious or risky scripts. Use whenever Claude imports, inserts, reviews, or trusts Creator Store assets, especially assets with Scripts, LocalScripts, ModuleScripts, hidden descendants, require calls, HTTP, DataStore, remote creation, obfuscated code, or suspicious names.
+description: Audit Creator Store/Toolbox models, packages and plugins for backdoors and risky scripts before trusting them. Use whenever inserting or reviewing third-party assets with scripts.
 ---
 
 # Roblox Creator Store Security Audit

@@ -1,75 +1,58 @@
 ---
 name: roblox-luau
-description: Regras de Luau moderno para Roblox - tipagem (--!strict), APIs atuais vs. depreciadas, task library, padrões de módulo e armadilhas comuns. Use ao escrever ou editar QUALQUER código .lua/.luau de Roblox.
+description: Modern Luau rules for Roblox - strict typing, current vs deprecated APIs, task library, module patterns, silent-bug pitfalls. Use when writing or editing any Roblox .lua/.luau code.
 ---
 
-# Luau moderno para Roblox
+# Modern Luau for Roblox
 
-## Regras obrigatórias
+## Rules
 
-- Todo arquivo começa com `--!strict`. Tipos em parâmetros e retornos públicos; `export type` para tipos compartilhados.
-- Serviços sempre via `game:GetService("Nome")` no topo do arquivo, nunca `game.Players`, `game.Workspace` (use `workspace` ou `game:GetService("Workspace")`).
-- Use a biblioteca `task`: `task.wait`, `task.spawn`, `task.defer`, `task.delay`, `task.cancel`.
-- Strings interpoladas: `` `Olá {player.Name}` `` em vez de concatenações longas.
-- Iteração genérica: `for _, x in lista do` (sem `ipairs/pairs`, ambos ainda funcionam mas não são necessários).
-- Operadores compostos: `x += 1`, `s ..= "a"`.
-- `if cond then a else b` como expressão, em vez de `cond and a or b` (que quebra quando `a` é falsy).
-- Crie a Instance, configure TODAS as propriedades, e só então defina `Parent` (por último).
-- Conecte eventos com `:Connect` (maiúsculo). Guarde as conexões e desconecte (ou use `Trove`).
+- Every file starts with `--!strict`. Type public params/returns; `export type` for shared types.
+- Services via `game:GetService("Name")` at the top; never `game.Players`. Use `workspace` for Workspace.
+- `task.wait/spawn/defer/delay/cancel` only.
+- String interpolation `` `Hi {player.Name}` ``; generic iteration `for _, x in list do`; `x += 1`.
+- `if c then a else b` expressions, not `c and a or b` (breaks when `a` is falsy).
+- Create an Instance, set all properties, set `Parent` **last**.
+- `:Connect` (capital C); keep connections and clean them (`Trove`).
 
-## Tabela de substituição (depreciado -> atual)
+## Deprecated → current
 
-| Não use | Use |
+| Don't | Do |
 |---|---|
-| `wait(n)` | `task.wait(n)` |
-| `spawn(f)` / `coroutine.wrap(f)()` para fire-and-forget | `task.spawn(f)` |
-| `delay(t, f)` | `task.delay(t, f)` |
-| `Instance.new("Part", parent)` | `Instance.new("Part")` ... `part.Parent = parent` |
-| `model:SetPrimaryPartCFrame(cf)` | `model:PivotTo(cf)` |
-| `model:GetModelCFrame()` / `GetPrimaryPartCFrame` | `model:GetPivot()` |
-| `Humanoid:LoadAnimation(a)` | `humanoid:FindFirstChildOfClass("Animator"):LoadAnimation(a)` |
-| `BodyVelocity`, `BodyPosition`, `BodyGyro`, `BodyForce` | `LinearVelocity`, `AlignPosition`, `AlignOrientation`, `VectorForce` |
-| `workspace:FindPartOnRay(...)` | `workspace:Raycast(origin, direction, params)` |
-| `Ray.new` + FindPartOnRay | `RaycastParams.new()` + `workspace:Raycast` |
-| `table.getn(t)` / `unpack(t)` | `#t` / `table.unpack(t)` |
-| `game:GetService("Players").LocalPlayer` em script de servidor | o `player` recebido do evento |
-| `string.len(s)` | `#s` (bytes) ou `utf8.len(s)` (caracteres) |
-| `math.random()` para gameplay determinístico | `Random.new(seed)` |
-| `loadstring`, `getfenv`, `setfenv` | não use (desativam otimizações/segurança) |
-| `require(123456)` (asset id) | módulos locais; ids de terceiros são vetor de backdoor |
-| `BindableEvent` para eventos internos de módulo | `Signal` (`Shared.Util.Signal`) |
-| `.Changed` para uma propriedade | `:GetPropertyChangedSignal("Prop")` |
-| `Instance:WaitForChild` sem timeout em código opcional | `WaitForChild(name, timeout)` e trate `nil` |
+| `wait` / `spawn` / `delay` | `task.wait` / `task.spawn` / `task.delay` |
+| `Instance.new("Part", parent)` | set props, then `.Parent` |
+| `SetPrimaryPartCFrame` / `GetPrimaryPartCFrame` / `GetModelCFrame` | `PivotTo` / `GetPivot` |
+| `Humanoid:LoadAnimation` | `Animator:LoadAnimation` |
+| `BodyVelocity/Position/Gyro/Force` | `LinearVelocity`, `AlignPosition`, `AlignOrientation`, `VectorForce` |
+| `FindPartOnRay*`, `Ray.new` | `workspace:Raycast(origin, dir, RaycastParams)` |
+| `table.getn`, global `unpack` | `#t`, `table.unpack` |
+| `LocalPlayer` on the server | the `player` argument |
+| `loadstring`, `getfenv/setfenv`, `require(assetId)` | never (security/perf) |
+| `BindableEvent` for module events | `Shared.Util.Signal` |
+| `.Changed` for one property | `:GetPropertyChangedSignal("Prop")` |
 
-## Padrão de módulo
+Unsure about an API? `node tools/rbxkit.mjs docs --api Class:Member` (skill `roblox-docs`).
+
+## Module and class patterns
 
 ```lua
 --!strict
 local Players = game:GetService("Players")
 
 local MyModule = {}
-
 export type Options = { speed: number, label: string? }
+local DEFAULT_SPEED = 16 -- UPPER_SNAKE constants, camelCase locals
 
-local DEFAULT_SPEED = 16 -- constantes em UPPER_SNAKE
-
-local function helper(x: number): number -- funções locais em camelCase
-	return x * 2
-end
-
-function MyModule.doThing(options: Options): boolean -- API pública em camelCase ou PascalCase, mas consistente no projeto
-	return helper(options.speed) > DEFAULT_SPEED
+function MyModule.run(options: Options): boolean
+	return options.speed > DEFAULT_SPEED
 end
 
 return MyModule
 ```
 
-Classes (objetos com estado):
-
 ```lua
 local Car = {}
 Car.__index = Car
-
 export type Car = typeof(setmetatable({} :: { speed: number, model: Model }, Car))
 
 function Car.new(model: Model): Car
@@ -83,20 +66,17 @@ end
 return Car
 ```
 
-## Armadilhas que geram bugs silenciosos
+## Silent-bug pitfalls
 
-- `WaitForChild` infinito trava o script inteiro; em Studio aparece "Infinite yield possible".
-- `while true do` sem `task.wait()` congela o servidor.
-- `player.Character` pode ser `nil` e muda a cada respawn: use `player.CharacterAdded` e pegue `Humanoid` com `FindFirstChildOfClass("Humanoid")`.
-- `Touched` dispara várias vezes por contato: use debounce por jogador (`local cooldown: {[Player]: number} = {}`).
-- Tabelas com chaves `Player` vazam memória se você não limpar no `Players.PlayerRemoving`.
-- `task.spawn` engole o retorno; erros aparecem só no Output.
-- Comparar floats com `==` (posições, CFrames) falha: use tolerância (`(a - b).Magnitude < 0.01`).
-- `#t` não funciona para dicionários; conte com loop.
-- Números do cliente podem ser `NaN` (`x ~= x`) ou `math.huge`: valide antes de usar.
-- `require` retorna a MESMA tabela para todos os scripts no mesmo lado (cache por ModuleScript); estado do módulo é compartilhado.
-- ModuleScripts em `ReplicatedStorage` rodam no cliente E no servidor (cada lado tem sua cópia de estado).
+- `WaitForChild` without timeout can hang forever ("Infinite yield possible").
+- `while true do` without `task.wait()` freezes the server.
+- `player.Character` can be nil and changes on respawn: use `CharacterAdded`; `FindFirstChildOfClass("Humanoid")`.
+- `Touched` fires many times per contact: debounce per player.
+- Tables keyed by `Player` leak unless cleared on `PlayerRemoving`.
+- `task.spawn` swallows return values; errors only show in Output.
+- Compare floats/positions with tolerance, not `==`.
+- `#t` doesn't count dictionary keys.
+- Client numbers can be `NaN` (`x ~= x`) or `math.huge`: validate.
+- `require` caches per ModuleScript per side: module state is shared on that side; modules in ReplicatedStorage run separately on client and server.
 
-## Ao terminar
-
-Rode `node tools/rbxkit.mjs check` (lint específico de Roblox) e, se instalados, `selene src` e `stylua --check src`.
+Finish with `node tools/rbxkit.mjs check` (plus `selene src` / `stylua --check src` when installed).

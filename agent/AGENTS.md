@@ -1,76 +1,45 @@
-# Instruções para agentes (Codex, Claude Code e outros)
+# Agent instructions (Codex, Claude Code, others)
 
-Este é um jogo **Roblox** escrito em **Luau**, sincronizado com o Roblox Studio pelo **Rojo**.
-Responda no idioma do usuário. O usuário pode não ser programador: explique o que fez em linguagem simples e diga o que ele precisa fazer no Studio.
+Roblox game in **Luau**, synced to Roblox Studio with **Rojo**. Reply in the user's language; they may not be a programmer, so explain results plainly and say what to do in Studio.
 
-## Mapa do projeto
+## Map
 
-- `default.project.json` — mapeamento Rojo (disco -> Studio).
-- `src/server/` -> `ServerScriptService.Server` — só servidor. `Services/*.luau` são carregados pelo `init.server.luau` (Init depois Start).
-- `src/client/` -> `StarterPlayer.StarterPlayerScripts.Client` — cliente. `Controllers/*.luau` carregados pelo `init.client.luau`.
-- `src/shared/` -> `ReplicatedStorage.Shared` — os dois lados. `Net` (remotes), `Util/Guard` (validação), `Util/RateLimiter`, `Util/Signal`, `Util/Trove`, `Config/`.
-- `src/server/Config/DataTemplate.luau` — formato dos dados salvos do jogador (`DataService`).
+- `src/server/` → `ServerScriptService.Server`: server only. `Services/*.luau` loaded by `init.server.luau` (Init, then Start).
+- `src/client/` → `StarterPlayerScripts.Client`: `Controllers/*.luau` loaded by `init.client.luau`.
+- `src/shared/` → `ReplicatedStorage.Shared`: `Net` (remotes), `Util/Guard`, `Util/RateLimiter`, `Util/Signal`, `Util/Trove`, `Config/`.
+- `src/dev/` → `ServerStorage.DevTools`: `Build` and `Shots` for building geometry in Studio (never runs live).
+- `src/server/Config/DataTemplate.luau`: saved player data shape (`DataService`).
 
-## Regras inegociáveis
+## Non-negotiables
 
-1. **Servidor é a autoridade.** Moedas, dano, inventário, compras e progresso são decididos no servidor. O cliente só envia intenções mínimas.
-2. **Todo remote é validado** com `Net.onServerEvent`/`Net.onServerInvoke` + `Guard` (tipos, faixas, posse, distância, cooldown). Registre o nome em `Net.Names`. Nunca use `InvokeClient`.
-3. **Dados do jogador só via `DataService:Update`.** Campo novo -> adicione em `DataTemplate` (valor e tipo).
-4. **Luau moderno e `--!strict`**: `task.*`, `GetService`, `Parent` por último, `:Connect`, sem APIs depreciadas.
-5. Projeto com Rojo: **edite os arquivos em `src/`**, não os scripts dentro do Studio via MCP.
-6. Não adicione dependências, não apague arquivos e não mude o schema de save existente (renomear/remover campos) sem o usuário pedir.
+1. **Server is authoritative** for currency, damage, inventory, purchases, progress. Clients send minimal intents.
+2. **Every remote validated** via `Net.onServerEvent`/`Net.onServerInvoke` + `Guard` (types, ranges, ownership, distance, cooldown); names in `Net.Names`; never `InvokeClient`.
+3. **Player data only via `DataService:Update`**; new fields go in `DataTemplate` (value + type).
+4. `--!strict`, `task.*`, `GetService`, `Parent` last, `:Connect`, no deprecated APIs.
+5. With Rojo, **edit files in `src/`**, not synced scripts in Studio.
+6. Don't add dependencies, delete files, or rename/remove saved-data fields unless asked.
+7. If a skill disagrees with the template's patterns, follow the template already in use. If the official docs disagree with a skill, the docs win.
 
-## Comandos
+## Token economy (keep quality, spend less)
+
+- Load only the 1-3 skills the task needs; open a skill's `references/` file only when it covers your exact case.
+- Unsure about an API: `node tools/rbxkit.mjs docs --api Class:Member` (returns just that member) — never read whole class pages or guess.
+- Search narrowly (`rg`, `script_grep`) instead of reading whole files; read only the lines you need.
+- `execute_luau` returns short summaries; screenshots only for visual judgment, max 2-3 per iteration.
+- Don't re-read files you just wrote; don't paste large code back to the user — reference `file:line`.
+
+## Commands
 
 ```
-node tools/rbxkit.mjs check                 # lint específico de Roblox (rode SEMPRE antes de terminar)
-node tools/rbxkit.mjs new service Nome      # gera src/server/Services/NomeService.luau
-node tools/rbxkit.mjs new controller Nome   # gera src/client/Controllers/NomeController.luau
-node tools/rbxkit.mjs new module Pasta/Nome # gera src/shared/Pasta/Nome.luau
-node tools/rbxkit.mjs docs --api Classe:membro  # referência oficial de uma API (ex.: TweenService:Create)
-node tools/rbxkit.mjs docs "pergunta em inglês" # busca na documentação oficial
-node tools/rbxkit.mjs mcp                   # mostra como conectar o MCP do Roblox Studio
-rokit install                               # instala rojo, selene, stylua, luau-lsp
-rojo serve                                  # sincroniza com o Studio (plugin Rojo)
-selene src && stylua --check src            # lint e formatação (se instalados)
+node tools/rbxkit.mjs check                     # Roblox lint — run before finishing
+node tools/rbxkit.mjs new service|controller|module <Name>
+node tools/rbxkit.mjs docs --api Class:Member   # official API reference, member only
+node tools/rbxkit.mjs docs "question in English"
+node tools/rbxkit.mjs mcp                       # connect Roblox Studio MCP
+rokit install && rojo serve                     # toolchain + live sync
+selene src && stylua --check src                # lint/format (if installed)
 ```
 
-## Skills disponíveis
+## Done means
 
-Leia a skill relevante antes de começar (em `.claude/skills/` e `.agents/skills/`):
-
-| Skill | Quando |
-|---|---|
-| `roblox-feature` | Implementar qualquer mecânica/sistema novo (fluxo completo) |
-| `roblox-luau` | Escrever qualquer código Luau |
-| `roblox-architecture` | Criar arquivos, decidir cliente vs. servidor |
-| `roblox-networking` | Remotes, segurança, anti-exploit |
-| `roblox-datastore` | Salvar dados, leaderboards |
-| `roblox-monetization` | Game Passes, Developer Products |
-| `roblox-ui` | HUD, menus, mobile |
-| `roblox-gameplay` | Combate, NPCs, rounds, coletáveis, física |
-| `roblox-performance` | Lag, memória, otimização |
-| `roblox-studio-mcp` | Testar/inspecionar no Studio pelo MCP |
-| `roblox-debug` | Erros e "não funciona" |
-| `roblox-review` | Auditoria/revisão de código |
-| `roblox-docs` | Conferir qualquer API na documentação oficial antes de usar |
-| `roblox-testing` | Testes (Jest Lua, Lune), QA, playtests com vários clientes |
-| `roblox-characters-animation` | Humanoid, spawn, aparência, animações, ferramentas |
-| `roblox-input` | Teclado/mouse, touch, gamepad, câmera customizada |
-| `roblox-physics` | Raycasts/spatial queries, constraints, network ownership |
-| `roblox-npc-ai` | Pathfinding, máquinas de estado, muitos NPCs |
-| `roblox-audio` | Música e efeitos (Audio API) |
-| `roblox-text-chat` | TextChatService, filtragem obrigatória de texto, PolicyService |
-| `roblox-teleport-matchmaking` | Vários places, lobby -> partida, servidores reservados |
-| `roblox-world-building` | Construir mapa por código, iluminação, terreno |
-| `roblox-open-cloud` | APIs REST, HttpService, webhooks, publicação |
-| `roblox-tooling` | Rokit, Rojo, Wally, Selene, StyLua, luau-lsp, CI |
-| `roblox-creator-store-security-audit` | Auditar modelos da Toolbox/Creator Store (backdoors) |
-
-Se uma skill e o template divergirem (ex.: ProfileStore vs. `DataService`, nomes de pastas), **siga o padrão do template** já usado no projeto, a menos que o usuário peça para mudar. Se a documentação oficial (`roblox-docs`) contradizer uma skill, a documentação vence.
-
-## Definição de pronto
-
-- `node tools/rbxkit.mjs check` sem erros.
-- Se o MCP do Studio estiver conectado: play test sem erros no Output (skill `roblox-studio-mcp`).
-- Resumo final ao usuário: arquivos alterados, passos no Studio, como testar.
+`rbxkit check` clean; with Studio MCP, a play test with no Output errors (and the `roblox-3d-building` review loop for anything visual); a short report: files changed, Studio steps, how to test.

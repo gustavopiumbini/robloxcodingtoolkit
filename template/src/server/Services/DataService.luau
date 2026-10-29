@@ -1,18 +1,18 @@
 --!strict
 --[[
-	DataService: carrega/salva os dados do jogador com DataStoreService.
+	DataService: loads/saves player data with DataStoreService.
 
-	- UpdateAsync com session lock (evita duplicação de itens entre servidores)
-	- Retry com backoff, autosave, save no PlayerRemoving e no BindToClose
-	- Reconcile: campos novos do DataTemplate aparecem em perfis antigos
+	- UpdateAsync with a session lock (prevents item duplication across servers)
+	- Retries with backoff, autosave, save on PlayerRemoving and BindToClose
+	- Reconcile: new DataTemplate fields appear in old profiles
 
 	API:
-	  DataService:Get(player) -> PlayerData?        (nil se ainda não carregou)
+	  DataService:Get(player) -> PlayerData?        (nil while loading)
 	  DataService:Update(player, function(data) ... end) -> boolean
 	  DataService:WaitForData(player) -> PlayerData?
 	  DataService.Loaded:Connect(function(player, data) end)
 
-	Para jogos grandes considere ProfileStore (https://github.com/MadStudioRoblox/ProfileStore).
+	For large games consider ProfileStore (https://github.com/MadStudioRoblox/ProfileStore).
 ]]
 
 local DataStoreService = game:GetService("DataStoreService")
@@ -33,12 +33,12 @@ type StoredRecord = {
 
 local STORE_NAME = "PlayerData_v1"
 local AUTOSAVE_INTERVAL = 120
-local LOCK_EXPIRE = 30 * 60 -- lock de servidor que caiu expira após 30 min
+local LOCK_EXPIRE = 30 * 60 -- a crashed server's lock expires after 30 min
 local LOAD_ATTEMPTS = 5
 local SAVE_ATTEMPTS = 3
 
--- Em Studio sem "Enable Studio Access to API Services" o DataStore falha:
--- os dados ficam só em memória.
+-- In Studio without "Enable Studio Access to API Services" DataStores fail:
+-- data stays in memory only.
 local JOB_ID = if RunService:IsStudio() then "studio-" .. HttpService:GenerateGUID(false) else game.JobId
 
 local DataService = {}
@@ -82,7 +82,7 @@ local function withRetries(attempts: number, fn: () -> any): (boolean, any)
 			return true, table.unpack(result, 2, result.n)
 		end
 		lastError = result[2]
-		warn(`[DataService] tentativa {attempt}/{attempts} falhou: {lastError}`)
+		warn(`[DataService] attempt {attempt}/{attempts} failed: {lastError}`)
 		task.wait(2 ^ attempt)
 	end
 	return false, lastError
@@ -98,11 +98,11 @@ local function load(player: Player): PlayerData?
 		local lockedByOther = false
 		local ok, record = withRetries(SAVE_ATTEMPTS, function()
 			return activeStore:UpdateAsync(keyFor(player), function(old: StoredRecord?)
-				lockedByOther = false -- o Roblox pode chamar esta função mais de uma vez
+				lockedByOther = false -- Roblox may call this function more than once
 				local now = os.time()
 				if old and old.lock and old.lock.jobId ~= JOB_ID and now - old.lock.time < LOCK_EXPIRE then
 					lockedByOther = true
-					return nil -- cancela a escrita
+					return nil -- cancels the write
 				end
 				local record: StoredRecord = {
 					data = if old then old.data else deepCopy(DataTemplate),
@@ -119,7 +119,7 @@ local function load(player: Player): PlayerData?
 			reconcile(data, DataTemplate :: any)
 			return data
 		end
-		-- Outro servidor ainda está salvando (jogador trocou de servidor rápido).
+		-- Another server is still saving (fast server hop).
 		task.wait(5)
 		if not player.Parent then
 			return nil
@@ -136,7 +136,7 @@ local function save(player: Player, data: PlayerData, release: boolean): boolean
 	local ok = withRetries(SAVE_ATTEMPTS, function()
 		return activeStore:UpdateAsync(keyFor(player), function(old: StoredRecord?)
 			if old and old.lock and old.lock.jobId ~= JOB_ID then
-				return nil -- perdemos o lock: não sobrescreva dados de outro servidor
+				return nil -- lost the lock: never overwrite another server's data
 			end
 			local record: StoredRecord = {
 				data = data,
@@ -162,7 +162,7 @@ local function onPlayerAdded(player: Player)
 		return
 	end
 	if not data then
-		player:Kick("Não foi possível carregar seus dados. Tente entrar novamente.")
+		player:Kick("Could not load your data. Please rejoin.")
 		return
 	end
 	data.Stats.Logins += 1
@@ -171,7 +171,7 @@ local function onPlayerAdded(player: Player)
 end
 
 local function onPlayerRemoving(player: Player)
-	-- Espera o load terminar para não perder o save.
+	-- Wait for the load to finish so the save isn't lost.
 	while loading[player] do
 		task.wait(0.5)
 	end
@@ -193,7 +193,7 @@ function DataService:WaitForData(player: Player): PlayerData?
 	return profiles[player]
 end
 
--- Única forma recomendada de mudar dados: centraliza escrita e notificações.
+-- The one way to change data: centralizes writes and notifications.
 function DataService:Update(player: Player, mutator: (PlayerData) -> ()): boolean
 	local data = profiles[player]
 	if not data then
@@ -209,16 +209,16 @@ function DataService:Init()
 		return DataStoreService:GetDataStore(STORE_NAME)
 	end)
 	if not ok then
-		warn(`[DataService] DataStore indisponível, usando memória: {result}`)
+		warn(`[DataService] DataStore unavailable, using memory: {result}`)
 		return
 	end
 	if RunService:IsStudio() then
-		-- Sem "Enable Studio Access to API Services" qualquer chamada falha.
+		-- Without "Enable Studio Access to API Services" every call fails.
 		local accessOk, accessErr = pcall(function()
 			return result:GetAsync("__studio_access_check")
 		end)
 		if not accessOk then
-			warn(`[DataService] Sem acesso a API Services no Studio, dados ficam em memória: {accessErr}`)
+			warn(`[DataService] No API Services access in Studio, data stays in memory: {accessErr}`)
 			return
 		end
 	end

@@ -1,7 +1,7 @@
 {
   "name": "rbxkit",
   "version": "0.1.0",
-  "description": "Roblox Vibe Coding Toolkit: skills, template Rojo e CLI para usar Claude Code e Codex no Roblox Studio",
+  "description": "Roblox vibe coding toolkit: agent skills, a Rojo game template, 3D build tools and a CLI for Claude Code and Codex with Roblox Studio",
   "type": "module",
   "bin": {
     "rbxkit": "tools/rbxkit.mjs"

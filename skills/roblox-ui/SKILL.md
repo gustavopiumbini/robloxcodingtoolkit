@@ -1,72 +1,61 @@
 ---
 name: roblox-ui
-description: Interfaces no Roblox - ScreenGui, layout responsivo (Scale, UIAspectRatioConstraint, UIListLayout), suporte a mobile/console/PC, tweens, botões, BillboardGui, ProximityPrompt e UI criada por código ou no Studio. Use ao criar ou corrigir HUD, menus, lojas, inventários, popups e qualquer elemento visual 2D.
+description: Roblox UI - ScreenGui, responsive layout (Scale, constraints, layouts), mobile/console/PC, tweens, BillboardGui, ProximityPrompt. Use for HUDs, menus, shops, inventories, popups and any 2D element.
 ---
 
-# UI no Roblox
+# UI
 
-## Princípios
+## Principles
 
-- UI é **apresentação**: lê estado (Attributes, remotes) e envia intenções. Nunca decide preço, saldo ou recompensa.
-- Fica no cliente: `src/client/Controllers/XController.luau` cria/controla a UI em `player.PlayerGui`. Templates feitos no Studio podem ficar em `ReplicatedStorage` ou `StarterGui` e são clonados.
-- `ScreenGui.ResetOnSpawn = false` para HUDs persistentes (senão a UI é recriada a cada morte e conexões duplicam).
+- UI is presentation: reads state (Attributes, remotes) and sends intents; never decides prices/rewards.
+- Lives in client Controllers, created in `player.PlayerGui` (or Studio-made templates cloned from ReplicatedStorage/StarterGui).
+- HUDs: `ScreenGui.ResetOnSpawn = false` (otherwise rebuilt on death with duplicated connections).
 
-## Responsividade (mobile é ~metade dos jogadores)
+## Responsive (≈half of players are on mobile)
 
-- Use `UDim2.fromScale` para tamanho/posição; `Offset` só para detalhes (bordas, paddings pequenos).
-- `AnchorPoint` + `Position` para alinhar (`AnchorPoint = Vector2.new(0.5, 0.5)` centraliza).
-- `UIAspectRatioConstraint` em botões/ícones para não distorcer.
-- `TextScaled = true` + `UITextSizeConstraint` (MaxTextSize) para texto legível.
-- Layouts: `UIListLayout` (lista), `UIGridLayout` (grade de inventário), `UIPadding`, `UIScale` (escala global por tamanho de tela), `UIFlexItem` para flex.
-- Respeite a área segura: `ScreenGui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets` (padrão) e não cubra o joystick/jump do mobile (canto inferior).
-- Botões: mínimo ~44 px de altura em mobile. Use `Activated` (funciona com toque, mouse e gamepad) em vez de `MouseButton1Click`.
-- Teste com o Device Emulator do Studio (Test > Device) em celular pequeno, tablet e 1080p.
+- `UDim2.fromScale` for size/position; `Offset` only for small details.
+- `AnchorPoint` + `Position` to align (`Vector2.new(0.5, 0.5)` centers).
+- `UIAspectRatioConstraint` on buttons/icons; `TextScaled` + `UITextSizeConstraint`.
+- `UIListLayout`, `UIGridLayout`, `UIPadding`, `UIScale`, `UIFlexItem`, `UICorner`, `UIStroke`.
+- Keep `ScreenInsets = CoreUISafeInsets`; don't cover the mobile joystick/jump (bottom corners).
+- Buttons ≥ ~44 px tall on mobile; use `Activated` (touch, mouse, gamepad).
+- Test with the Device Simulator (phone, tablet, 1080p).
 
-## Input multiplataforma
+## Input
 
 ```lua
-local ContextActionService = game:GetService("ContextActionService")
 ContextActionService:BindAction("OpenInventory", function(_, state)
 	if state == Enum.UserInputState.Begin then toggleInventory() end
 	return Enum.ContextActionResult.Sink
-end, true, Enum.KeyCode.E, Enum.KeyCode.ButtonY) -- true cria botão touch no mobile
+end, true, Enum.KeyCode.E, Enum.KeyCode.ButtonY) -- true = touch button on mobile
 ```
 
-`UserInputService.PreferredInput` (ou `TouchEnabled`/`GamepadEnabled`) para adaptar dicas de controles.
+Deeper input/camera work: `roblox-input`.
 
-## Animação
-
-```lua
-local TweenService = game:GetService("TweenService")
-local info = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-TweenService:Create(frame, info, { Position = UDim2.fromScale(0.5, 0.5) }):Play()
-```
-
-Não crie tweens a cada frame; cancele o anterior (`tween:Cancel()`) quando reabrir menus rapidamente.
-
-## Estado -> UI
+## Animation and state
 
 ```lua
-local function render()
-	label.Text = `Moedas: {player:GetAttribute("Coins") or 0}`
-end
+TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+	{ Position = UDim2.fromScale(0.5, 0.5) }):Play()
+
+local function render() label.Text = `Coins: {player:GetAttribute("Coins") or 0}` end
 player:GetAttributeChangedSignal("Coins"):Connect(render)
 render()
 ```
 
-Para listas (inventário): limpe filhos antigos (exceto layouts) e recrie, ou mantenha um mapa `id -> frame` e atualize só o que mudou. Use `Trove` por janela aberta para limpar conexões quando fechar.
+Cancel the previous tween when reopening quickly. Lists: keep an `id -> frame` map and update diffs; one `Trove` per open window.
 
-## UI no mundo 3D
+## 3D-space UI
 
-- `BillboardGui` (nome/vida sobre cabeças): `AlwaysOnTop`, `MaxDistance`, tamanho em Scale de studs.
-- `SurfaceGui` em partes (placas, telas).
-- `ProximityPrompt` para interações (“Pressione E para abrir”): o evento `Triggered` dispara NO SERVIDOR com o player — já é validado por distância pelo Roblox, mas cheque estado/cooldown.
+- `BillboardGui` (names/health): `AlwaysOnTop`, `MaxDistance`, stud-based size.
+- `SurfaceGui` on parts (signs, screens).
+- `ProximityPrompt` ("Press E"): `Triggered` fires on the server with the player; still check state/cooldown.
 
-## Checklist de UI
+## Checklist
 
-- [ ] Funciona em mobile pequeno (sem sobreposição, botões tocáveis)
-- [ ] Texto legível e sem cortar (`TextScaled` + constraint, ou `TextWrapped`)
-- [ ] `ZIndex`/`DisplayOrder` corretos para popups acima da HUD
-- [ ] Sem conexões duplicadas após respawn
-- [ ] Feedback imediato em botões (som/escala) mesmo esperando o servidor
-- [ ] Textos de jogadores filtrados (TextService) antes de mostrar para outros
+- [ ] Works on a small phone (no overlap, tappable buttons)
+- [ ] Text readable and not cut off
+- [ ] `ZIndex`/`DisplayOrder` correct for popups
+- [ ] No duplicated connections after respawn
+- [ ] Instant button feedback (sound/scale) while waiting for the server
+- [ ] Player-authored text filtered before showing to others

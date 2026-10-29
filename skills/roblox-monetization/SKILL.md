@@ -1,77 +1,66 @@
 ---
 name: roblox-monetization
-description: Monetização no Roblox - Game Passes, Developer Products, ProcessReceipt idempotente, Premium, assinaturas e prompts de compra. Use ao implementar lojas com Robux, VIP, itens pagos, moedas compradas ou ao depurar compras que não entregam.
+description: Game Passes, Developer Products, idempotent ProcessReceipt, Premium, purchase prompts and policy checks. Use for Robux shops, VIP, paid items/currency, or purchases that don't deliver.
 ---
 
-# Monetização
+# Monetization
 
-## Game Pass (compra única, permanente)
+## Game Pass (one-time, permanent)
 
 ```lua
 local MarketplaceService = game:GetService("MarketplaceService")
-local VIP_PASS_ID = 0 -- substitua pelo id real (Creator Hub > Monetização > Passes)
+local VIP_PASS_ID = 0 -- real id from Creator Hub > Monetization > Passes
 
 local function ownsPass(player: Player, passId: number): boolean
 	local ok, owns = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, passId)
 	return ok and owns
 end
 
--- Ao entrar: aplicar benefícios (faça cache por jogador)
--- Compra durante a sessão:
 MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
 	if purchased and passId == VIP_PASS_ID then
-		-- aplicar benefício imediatamente
+		-- apply the benefit now (also check ownsPass on join, cached)
 	end
 end)
 ```
 
-Cliente abre o prompt: `MarketplaceService:PromptGamePassPurchase(player, passId)`. O benefício é sempre aplicado pelo servidor.
+Client prompts with `MarketplaceService:PromptGamePassPurchase(player, passId)`; the server applies benefits.
 
-## Developer Product (consumível: moedas, revives)
+## Developer Product (consumable)
 
-Regras do `ProcessReceipt` (callback ÚNICO por jogo, defina em um só lugar, no servidor):
-
-1. Pode ser chamado mais de uma vez para a mesma compra: seja **idempotente** usando `receiptInfo.PurchaseId`.
-2. Retorne `Enum.ProductPurchaseDecision.PurchaseGranted` SOMENTE depois de entregar E salvar.
-3. Se o jogador saiu, os dados não carregaram, ou o save falhou: retorne `NotProcessedYet` (o Roblox tenta de novo depois).
-4. Nunca dê `error` sem tratamento dentro do callback.
+`ProcessReceipt` (one callback per game, server):
+1. May run more than once per purchase → idempotent via `receiptInfo.PurchaseId`.
+2. Return `PurchaseGranted` only after granting **and** saving.
+3. Player gone, data not loaded, or save failed → `NotProcessedYet` (Roblox retries).
+4. Never let it error.
 
 ```lua
 local PRODUCTS: { [number]: (Player) -> () } = {
-	[0000000] = function(player) -- 100 moedas
-		DataService:Update(player, function(d) d.Coins += 100 end)
-	end,
+	[0000000] = function(player) DataService:Update(player, function(d) d.Coins += 100 end) end,
 }
 
 MarketplaceService.ProcessReceipt = function(receiptInfo)
 	local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
-	if not player then
-		return Enum.ProductPurchaseDecision.NotProcessedYet
-	end
-	local data = DataService:Get(player)
+	local data = player and DataService:Get(player)
 	local grant = PRODUCTS[receiptInfo.ProductId]
-	if not data or not grant then
+	if not (player and data and grant) then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
-	data.Purchases = data.Purchases or {} -- adicione Purchases = {} ao DataTemplate
+	-- add `Purchases: { [string]: number }` to DataTemplate; keep only the last ~50 ids
 	if data.Purchases[receiptInfo.PurchaseId] then
-		return Enum.ProductPurchaseDecision.PurchaseGranted -- já entregue antes
+		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
-	local ok = pcall(grant, player)
-	if not ok then
+	if not pcall(grant, player) then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	DataService:Update(player, function(d) d.Purchases[receiptInfo.PurchaseId] = os.time() end)
-	-- Idealmente force um save aqui antes de retornar Granted.
+	-- ideally force a save before returning Granted
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 ```
 
-Mantenha o histórico `Purchases` limitado (ex.: últimos 50 ids) para não estourar a chave.
+## Other
 
-## Outros
-
-- Premium: `player.MembershipType == Enum.MembershipType.Premium`; `Players.PlayerMembershipChanged`. Premium Payouts são automáticos por tempo de jogo.
-- Preços: `MarketplaceService:GetProductInfo(id, Enum.InfoType.Product)` em pcall, faça cache; não hardcode o preço exibido.
-- Testes no Studio: compras são simuladas (não cobram). Teste o fluxo inteiro incluindo sair durante a compra.
-- Políticas: `PolicyService:GetPolicyInfoForPlayerAsync` para paid random items (loot boxes) que são proibidos em alguns países (`ArePaidRandomItemsRestricted`).
+- Premium: `player.MembershipType == Enum.MembershipType.Premium`, `Players.PlayerMembershipChanged`.
+- Prices: `MarketplaceService:GetProductInfo(id, Enum.InfoType.Product)` in pcall, cached; don't hardcode displayed prices.
+- Studio purchases are simulated: test the full flow, including leaving mid-purchase.
+- Paid random items (loot boxes) are restricted in some countries: `PolicyService:GetPolicyInfoForPlayerAsync(player).ArePaidRandomItemsRestricted`.

@@ -1,6 +1,6 @@
 ---
 name: roblox-npc-ai
-description: NPCs and enemy AI - PathfindingService (CreatePath, ComputeAsync, costs, modifiers, links, blocked paths), chase/follow loops, state machines, perception and line of sight, spawning/pooling, scaling to many NPCs. Use when creating enemies, pets, followers, shopkeepers, wave spawners, or fixing NPCs that get stuck, jitter, or lag the server.
+description: NPCs and enemy AI - PathfindingService, state machines, perception, scaling many NPCs. Use for enemies, followers, shopkeepers, wandering crowds or AI behavior.
 ---
 
 # NPCs and AI

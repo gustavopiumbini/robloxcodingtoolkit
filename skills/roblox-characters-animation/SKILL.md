@@ -1,6 +1,6 @@
 ---
 name: roblox-characters-animation
-description: Characters and animation - Humanoid properties/states, spawning (LoadCharacterAsync), health and damage, HumanoidDescription appearance, Animator/AnimationTrack playback, priorities and markers, default animation replacement, Tools, TweenService, IKControl, Character Controller Library (beta). Use when changing movement, abilities, damage, respawn, avatars, animations, tweens, or tools/weapons.
+description: Characters and animation - Humanoid properties/states, spawning, health/damage, appearance, Animator playback, tweening, Tools. Use for character behavior, movement tweaks, animations or tools.
 ---
 
 # Characters and animation

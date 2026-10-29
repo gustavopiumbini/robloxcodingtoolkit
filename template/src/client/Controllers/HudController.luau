@@ -1,6 +1,6 @@
 --!strict
--- Exemplo de UI criada por código: mostra moedas, notificações e um botão de
--- compra. A UI é só apresentação; o servidor valida tudo.
+-- Example UI built in code: coins, notifications and a buy button.
+-- UI is presentation only; the server validates everything.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -52,14 +52,14 @@ function HudController:Start()
 	buyButton.Size = UDim2.fromScale(0.15, 0.07)
 	buyButton.TextScaled = true
 	buyButton.Font = Enum.Font.GothamBold
-	buyButton.Text = "Comprar Espada (50)"
+	buyButton.Text = "Buy Sword (50)"
 	buyButton.Parent = gui
 
 	gui.Parent = player:WaitForChild("PlayerGui")
 
 	local function refreshCoins()
 		local coins = player:GetAttribute("Coins")
-		coinsLabel.Text = if type(coins) == "number" then `Moedas: {coins}` else "Carregando..."
+		coinsLabel.Text = if type(coins) == "number" then `Coins: {coins}` else "Loading..."
 	end
 	player:GetAttributeChangedSignal("Coins"):Connect(refreshCoins)
 	refreshCoins()

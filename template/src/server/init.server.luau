@@ -1,10 +1,10 @@
 --!strict
 --[[
-	Bootstrap do servidor. Carrega todos os ModuleScripts em Services/ e chama:
-	  1. Service:Init()  - em ordem alfabética, síncrono (prepare estado, crie remotes)
-	  2. Service:Start() - em paralelo, depois que TODOS os Init terminaram
+	Server bootstrap. Requires every ModuleScript in Services/ and calls:
+	  1. Service:Init()  - alphabetical, synchronous (prepare state, create remotes)
+	  2. Service:Start() - in parallel, after ALL Init calls finished
 
-	Para criar um serviço: node tools/rbxkit.mjs new service NomeDoServico
+	New service: node tools/rbxkit.mjs new service Name
 ]]
 
 local servicesFolder = script:WaitForChild("Services")
@@ -25,7 +25,7 @@ for _, module in modules do
 	if ok then
 		table.insert(services, { name = module.Name, service = result })
 	else
-		warn(`[Server] Falha ao carregar {module.Name}: {result}`)
+		warn(`[Server] Failed to load {module.Name}: {result}`)
 	end
 end
 
@@ -33,7 +33,7 @@ for _, entry in services do
 	if type(entry.service.Init) == "function" then
 		local ok, err = pcall(entry.service.Init, entry.service)
 		if not ok then
-			warn(`[Server] {entry.name}:Init falhou: {err}`)
+			warn(`[Server] {entry.name}:Init failed: {err}`)
 		end
 	end
 end
@@ -44,4 +44,4 @@ for _, entry in services do
 	end
 end
 
-print(`[Server] {#services} serviços iniciados`)
+print(`[Server] {#services} services started`)

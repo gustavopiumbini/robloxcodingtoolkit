@@ -1,6 +1,6 @@
 --!strict
--- Exemplo de remote seguro: o cliente envia SÓ o id do item. Preço, saldo e
--- entrega são decididos no servidor.
+-- Secure remote example: the client sends ONLY the item id. Price, balance and
+-- delivery are decided on the server.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,7 +14,7 @@ local CoinService = require(script.Parent.CoinService)
 local ShopService = {}
 
 function ShopService:Init()
-	-- Cria os remotes no Init para que existam antes de qualquer cliente pedir.
+	-- Create remotes in Init so they exist before any client asks.
 	Net.event(Net.Names.Notify)
 
 	Net.onServerEvent(Net.Names.BuyItem, {
@@ -24,13 +24,13 @@ function ShopService:Init()
 	}, function(player, itemId: string)
 		local item = Items[itemId]
 		if not CoinService:TrySpend(player, item.price) then
-			Net.event(Net.Names.Notify):FireClient(player, "Moedas insuficientes!")
+			Net.event(Net.Names.Notify):FireClient(player, "Not enough coins!")
 			return
 		end
 		DataService:Update(player, function(data)
 			data.Inventory[itemId] = (data.Inventory[itemId] or 0) + 1
 		end)
-		Net.event(Net.Names.Notify):FireClient(player, `Você comprou {item.name}!`)
+		Net.event(Net.Names.Notify):FireClient(player, `You bought {item.name}!`)
 	end)
 
 	Net.onServerInvoke(Net.Names.GetShopData, {

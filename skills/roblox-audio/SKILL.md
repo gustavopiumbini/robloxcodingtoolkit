@@ -1,6 +1,6 @@
 ---
 name: roblox-audio
-description: Sound and music - the Audio API (AudioPlayer, AudioEmitter, AudioListener, AudioDeviceOutput, Wire, effects, faders), classic Sound/SoundGroup, 2D vs 3D audio, music and SFX volume, client vs server playback, asset permissions, streaming caveats, voice routing, text-to-speech. Use when adding music, sound effects, spatial audio, mixing, or fixing sounds that don't play.
+description: Sound and music - Audio API (AudioPlayer, emitters, listeners, effects), classic Sound, 2D/3D audio, asset permissions. Use for music, SFX, spatial audio or voice-related features.
 ---
 
 # Roblox audio

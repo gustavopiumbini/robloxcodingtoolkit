@@ -1,6 +1,6 @@
 ---
 name: roblox-tooling
-description: Professional Roblox toolchain - Studio Script Sync vs Rojo, Rokit, Wally/pesde packages, luau-lsp with sourcemaps, StyLua, selene, darklua, Lune, roblox-ts, .luaurc, git, GitHub Actions CI and Open Cloud publishing. Use when creating a Roblox repo, configuring VS Code/Cursor, adding packages, fixing sourcemap/require typing, or automating builds and deploys.
+description: Pro Roblox toolchain - Studio Script Sync vs Rojo, Rokit, Wally, Selene, StyLua, luau-lsp, Lune, roblox-ts, Git and CI. Use when setting up or fixing the dev environment or pipeline.
 ---
 
 # Roblox tooling

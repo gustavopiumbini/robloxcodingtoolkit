@@ -1,61 +1,46 @@
 ---
 name: roblox-feature
-description: Fluxo de "vibe coding" para implementar uma feature completa em um jogo Roblox, do pedido em linguagem natural até código testado - entender, planejar a divisão cliente/servidor, implementar com os módulos do template, rodar o lint e verificar no Studio. Use quando o usuário pedir uma mecânica/sistema novo ("faz uma loja", "quero um sistema de pets", "cria um obby", "adiciona double jump").
+description: End-to-end workflow for a Roblox feature from a plain-language request - understand, plan the client/server split, implement with template modules, lint, verify in Studio, report. Use when the user asks for a new mechanic or system ("make a shop", "add pets", "build an obby", "double jump").
 ---
 
-# Implementando uma feature (fluxo completo)
+# Feature workflow
 
-## 1. Entender (rápido)
+## 1. Understand (fast)
 
-- Leia `AGENTS.md`, `default.project.json` e liste `src/` para saber o que já existe (serviços, Net.Names, Config).
-- Se o pedido for vago, assuma o padrão mais comum em jogos Roblox populares e diga a suposição em uma linha. Pergunte só o que muda o design (ex.: "os pets dão bônus ou são só cosméticos?").
+Read `default.project.json`, list `src/` (services, `Net.Names`, Config). Vague request → assume the most common pattern in popular Roblox games and state it in one line. Ask only questions that change the design.
 
-## 2. Planejar (mostre ao usuário em 3-8 linhas)
+## 2. Plan (3-8 lines to the user)
 
-Para cada feature, defina:
-- **Estado e regras (servidor)**: qual Service, quais dados salvos (DataTemplate), quais validações.
-- **Remotes**: nome em `Net.Names`, argumentos e o `Guard` de cada um. Mínimo de dados vindos do cliente.
-- **Dados compartilhados**: o que vai em `src/shared/Config/`.
-- **Cliente**: Controller, UI, input, efeitos.
-- **Coisas no Studio**: partes, tags (CollectionService), assets que o usuário precisa criar/fornecer.
+- **Server**: which Service, saved data (DataTemplate), validations.
+- **Remotes**: names in `Net.Names`, args and their `Guard`. Minimal client data.
+- **Shared**: what goes in `src/shared/Config/`.
+- **Client**: Controller, UI, input, effects.
+- **Studio**: parts/tags/assets the user must create or provide; geometry via `roblox-3d-building`.
 
-## 3. Implementar
+## 3. Implement
 
-- Gere esqueletos com `node tools/rbxkit.mjs new service X` / `new controller X` / `new module Pasta/X`.
-- Siga as skills: `roblox-luau` (estilo), `roblox-networking` (todo remote validado), `roblox-datastore` (dados por DataService:Update), `roblox-ui`, `roblox-gameplay`.
-- Números de balanceamento como constantes no topo ou em `Config`.
-- Mantenha cada arquivo focado; não reescreva arquivos não relacionados.
+- Skeletons: `node tools/rbxkit.mjs new service|controller|module <Name>`.
+- Load only the skills the task needs (e.g. `roblox-networking` for remotes, `roblox-datastore` for saved data, `roblox-ui` for screens). Read their `references/` only when the SKILL.md points you there for your exact case.
+- Unsure about an API → `node tools/rbxkit.mjs docs --api Class:Member` instead of guessing.
+- Balance numbers as constants or in `Config`. Keep files focused; don't rewrite unrelated files.
 
-## 4. Verificar (obrigatório antes de dizer "pronto")
+## 4. Verify (required before "done")
 
 ```
-node tools/rbxkit.mjs check          # lint Roblox: APIs depreciadas, remotes sem validação, etc.
-selene src                           # se instalado (rokit install)
-stylua --check src                   # se instalado; use `stylua src` para formatar
-rojo build -o build.rbxl             # se instalado: confirma que o projeto monta
+node tools/rbxkit.mjs check     # Roblox lint (deprecated APIs, unvalidated remotes, ...)
+selene src                      # if installed (rokit install)
+stylua --check src              # if installed; `stylua src` to format
+rojo build -o build.rbxl        # if installed: the project assembles
 ```
 
-Corrija todos os erros. Avisos: corrija ou justifique.
+Fix every error; fix or justify warnings. With Studio MCP: the `roblox-studio-mcp` verify loop. Without it: give short manual test steps ("run `rojo serve`, connect, press Play, click X, expect Y").
 
-Se o MCP do Studio estiver disponível, siga o loop da skill `roblox-studio-mcp` (play test + Output). Se não estiver, diga ao usuário como testar manualmente (passo a passo curto: "rode `rojo serve`, conecte o plugin, aperte Play, clique no botão X, deve aparecer Y").
+## 5. Report
 
-## 5. Entregar
+Files changed; what to do in Studio (tags, parts, asset/pass ids, API access); how to test; known limits and 1-3 next steps.
 
-Resumo curto para o usuário:
-- O que foi criado/alterado (arquivos).
-- O que ele precisa fazer no Studio (tags, partes, ids de assets/gamepass, Enable API Services).
-- Como testar.
-- Limitações conhecidas / próximos passos sugeridos (1-3 itens).
+## Decomposition examples
 
-## Exemplos de decomposição
-
-**"Sistema de pets que seguem o jogador e dão bônus de moedas"**
-- Servidor `PetService`: inventário `Pets` e `EquippedPet` no DataTemplate; remotes `EquipPet(petId)` com `Guard.keyOf(OwnedPets)` + checagem de posse; multiplicador aplicado no `CoinService:Add`.
-- Shared `Config/Pets`: nome, raridade, multiplicador, modelo.
-- Cliente `PetController`: clona o modelo do pet e o faz seguir (AlignPosition/lerp no `RenderStepped`) — visual local; outros jogadores veem via atributo `EquippedPet` replicado e cada cliente renderiza.
-
-**"Double jump"**
-- Puramente cliente (movimento do próprio personagem replica): `UserInputService.JumpRequest` + `Humanoid.StateChanged`; servidor só precisa limitar se houver anti-cheat de voo.
-
-**"Loja com Robux"**
-- Ver skill `roblox-monetization` (ProcessReceipt idempotente) + `roblox-ui`.
+- **Pets that follow and boost coins**: `PetService` (owned/equipped in DataTemplate, `EquipPet(petId)` validated against owned pets, multiplier applied in `CoinService:Add`); `Config/Pets`; `PetController` renders followers locally from a replicated `EquippedPet` attribute.
+- **Double jump**: client-only (`UserInputService.JumpRequest` + `Humanoid.StateChanged`); the character replicates.
+- **Robux shop**: `roblox-monetization` + `roblox-ui`.
