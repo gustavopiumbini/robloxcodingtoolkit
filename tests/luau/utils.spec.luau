@@ -3,15 +3,16 @@
 --   lune run tests/luau/utils.spec.luau
 
 local process = require("@lune/process")
+local task = require("@lune/task")
+local load = require("./loader")
 
--- Roblox exposes `task` as a global; Lune exposes it as a library.
-local G = _G :: any
-G.task = require("@lune/task")
-
-local Guard = require("../../template/src/shared/Util/Guard")
-local RateLimiter = require("../../template/src/shared/Util/RateLimiter")
-local Signal = require("../../template/src/shared/Util/Signal")
-local Trove = require("../../template/src/shared/Util/Trove")
+-- Paths are relative to the repository root (where `lune run` is invoked).
+local UTIL = "template/src/shared/Util/"
+local globals = { task = task }
+local Guard = load(UTIL .. "Guard.luau", globals)
+local RateLimiter = load(UTIL .. "RateLimiter.luau", globals)
+local Signal = load(UTIL .. "Signal.luau", globals)
+local Trove = load(UTIL .. "Trove.luau", globals)
 
 local passed, failed = 0, 0
 

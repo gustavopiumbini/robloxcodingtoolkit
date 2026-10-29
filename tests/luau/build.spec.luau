@@ -4,17 +4,18 @@
 
 local process = require("@lune/process")
 local roblox = require("@lune/roblox") :: any
+local load = require("./loader")
 
--- Expose the Roblox globals Build.luau expects.
-local G = _G :: any
-G.Instance = roblox.Instance
-G.Vector3 = roblox.Vector3
-G.CFrame = roblox.CFrame
-G.Color3 = roblox.Color3
-G.Enum = roblox.Enum
-G.game = roblox.Instance.new("DataModel")
-
-local B = require("../../template/src/dev/Build") :: any
+-- Roblox globals Build.luau expects. Paths are relative to the repository root.
+local B = load("template/src/dev/Build.luau", {
+	task = require("@lune/task"),
+	Instance = roblox.Instance,
+	Vector3 = roblox.Vector3,
+	CFrame = roblox.CFrame,
+	Color3 = roblox.Color3,
+	Enum = roblox.Enum,
+	game = roblox.Instance.new("DataModel"),
+})
 
 local passed, failed = 0, 0
 local function test(name: string, fn: () -> ())

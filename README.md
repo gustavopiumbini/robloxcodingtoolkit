@@ -1,77 +1,98 @@
-# Roblox Vibe Coding Toolkit
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="Roblox Vibe Coding Toolkit" width="100%">
+</p>
 
-Kit para criar jogos Roblox conversando com um agente de IA — **Claude Code** ou **Codex CLI** — conectado ao **Roblox Studio**.
+<h1 align="center">Roblox Vibe Coding Toolkit</h1>
 
-Você descreve o que quer ("faz uma loja com espada e escudo", "cria um obby com checkpoints"), o agente escreve o código Luau seguindo boas práticas de Roblox (servidor autoritativo, remotes validados, dados salvos com segurança), roda o lint e testa no Studio pelo MCP.
+<p align="center">
+  <b>Describe your game. Your AI agent builds it in Roblox Studio — securely, cleanly, and good-looking.</b>
+</p>
 
-## O que vem no kit
+<p align="center">
+  <a href="#-quick-start"><b>QUICK START →</b></a> ·
+  <a href="#-connect-roblox-studio">CONNECT STUDIO</a> ·
+  <a href="#-whats-inside">WHAT'S INSIDE</a> ·
+  <a href="#-3d-building-that-looks-good">3D BUILDING</a> ·
+  <a href="#-the-rbxkit-cli">RBXKIT CLI</a>
+</p>
 
-| Parte | O que é |
-|---|---|
-| `skills/` | 25 **skills** (formato `SKILL.md`, funcionam no Claude Code e no Codex) com o conhecimento de Roblox que o agente consulta |
-| `template/` | Projeto **Rojo** pronto: bootstraps de servidor/cliente, `DataService` com session lock, `Net` + `Guard` + `RateLimiter` para remotes seguros, `Signal`, `Trove`, exemplo de loja e HUD |
-| `agent/` | `AGENTS.md` (lido pelo Codex e outros) e `CLAUDE.md` (Claude Code) com as regras do projeto |
-| `tools/rbxkit.mjs` | CLI sem dependências: cria projetos, gera services/controllers, **lint específico de Roblox**, configuração do MCP do Studio |
+<p align="center">
+  <a href="https://github.com/gustavopiumbini/robloxcodingtoolkit/actions/workflows/ci.yml"><img src="https://github.com/gustavopiumbini/robloxcodingtoolkit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-E8B86D" alt="MIT"></a>
+  <img src="https://img.shields.io/badge/skills-26-E8B86D" alt="26 skills">
+  <img src="https://img.shields.io/badge/Luau-strict-2B2D31" alt="Luau strict">
+</p>
 
-### Skills
+<p align="center">
+  <b>Claude Code</b> + <b>Codex CLI</b> / portable <code>SKILL.md</code> skills / Rojo template / Roblox Studio MCP
+</p>
 
-| Skill | Para quê |
-|---|---|
-| `roblox-feature` | Fluxo completo de vibe coding: entender → planejar cliente/servidor → implementar → verificar → entregar |
-| `roblox-luau` | Luau moderno, `--!strict`, tabela de APIs depreciadas → atuais, armadilhas |
-| `roblox-architecture` | Estrutura Rojo, onde cada script roda, padrão Services/Controllers |
-| `roblox-networking` | RemoteEvents seguros, validação, rate limit, anti-exploit |
-| `roblox-datastore` | Salvar dados sem perder/duplicar, leaderboards, MemoryStore |
-| `roblox-monetization` | Game Passes, Developer Products, `ProcessReceipt` idempotente |
-| `roblox-ui` | HUD/menus responsivos, mobile, input multiplataforma |
-| `roblox-gameplay` | Combate, projéteis, NPC com pathfinding, rounds, obby, coletáveis, física |
-| `roblox-performance` | Lag, memory leaks, StreamingEnabled, Parallel Luau |
-| `roblox-studio-mcp` | Usar o MCP do Studio: play test, Output, `execute_luau`, screenshots |
-| `roblox-debug` | Interpretar erros do Output e achar a causa |
-| `roblox-review` | Auditoria de segurança/dados/performance antes de publicar |
-| `roblox-docs` | Consulta a documentação oficial da Roblox antes de usar uma API (via `rbxkit docs`) |
+---
 
-Skills de terceiros (MIT, veja [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)):
+## 00 / Choose where to start
 
-| Skill | Para quê | Origem |
+| Your situation | Path | What you get |
 |---|---|---|
-| `roblox-testing` | Jest Lua, Lune, testes no Open Cloud, QA com vários clientes | [EL4CTEO](https://github.com/EL4CTEO/roblox-skills) |
-| `roblox-characters-animation` | Humanoid, spawn, aparência, animações, ferramentas | EL4CTEO |
-| `roblox-input` | Input Action System, UserInputService, câmeras | EL4CTEO |
-| `roblox-physics` | Spatial queries, constraints, network ownership | EL4CTEO |
-| `roblox-npc-ai` | Pathfinding, máquinas de estado, escala | EL4CTEO |
-| `roblox-audio` | Audio API, música, som 3D | EL4CTEO |
-| `roblox-text-chat` | TextChatService, filtragem de texto, PolicyService | EL4CTEO |
-| `roblox-teleport-matchmaking` | Vários places, servidores reservados, matchmaking | EL4CTEO |
-| `roblox-world-building` | Mapas por código, iluminação, terreno | EL4CTEO |
-| `roblox-open-cloud` | APIs REST, HttpService, webhooks, Secrets | EL4CTEO |
-| `roblox-tooling` | Rokit, Rojo, Wally, luau-lsp, CI | EL4CTEO |
-| `roblox-creator-store-security-audit` | Auditoria de modelos da Toolbox (backdoors) | [AshExplained](https://github.com/AshExplained/roblox-skills) |
+| **I have a game idea** | [Start a new game](#1-create-a-game) | Rojo project, secure networking and data modules, 3D build tools, 26 skills, agent rules |
+| **I already have a project** | [Add the toolkit](#existing-project) | Skills + `AGENTS.md` + `rbxkit` in your repo, nothing overwritten |
+| **I want the agent inside Studio** | [Connect Studio MCP](#-connect-roblox-studio) | Your agent can play test, read Output, run Luau and take screenshots |
 
-Outras coleções que avaliamos e você pode instalar à parte: [Roblox/roblox-studio-agent-plugin](https://github.com/Roblox/roblox-studio-agent-plugin) (plugin oficial de conexão com o Studio), [nonlooped/roblox-suite](https://github.com/nonlooped/roblox-suite), [AshExplained/roblox-skills](https://github.com/AshExplained/roblox-skills) (design, economia, live ops) e [m4bwav/roblox-agent](https://github.com/m4bwav/roblox-agent).
+<p align="center">
+  <img src="docs/assets/workflow.svg" alt="Describe it. Build it. Verify it." width="100%">
+</p>
 
-## Começando
+You describe the goal in plain language — *"add a shop with a sword and a shield"*, *"build a medieval tavern"*, *"make an obby with 10 checkpoints"*. The agent loads only the skills it needs, plans the client/server split, writes strict Luau on top of battle-tested modules, builds geometry in Studio, then **proves it works**: lint, type check, play test, screenshots.
 
-Pré-requisitos: [Roblox Studio](https://create.roblox.com/), [Node.js 18+](https://nodejs.org/), [Rokit](https://github.com/rojo-rbx/rokit) e [Claude Code](https://claude.com/claude-code) e/ou [Codex CLI](https://developers.openai.com/codex).
+---
 
-### 1. Criar um jogo novo
+## ⚡ Quick start
+
+**Requirements:** [Roblox Studio](https://create.roblox.com/) · [Node.js 18+](https://nodejs.org/) · [Rokit](https://github.com/rojo-rbx/rokit) · [Claude Code](https://claude.com/claude-code) and/or [Codex CLI](https://developers.openai.com/codex)
+
+### 1. Create a game
 
 ```bash
-npx github:gustavopiumbini/robloxcodingtoolkit init MeuJogo
-# ou: git clone https://github.com/gustavopiumbini/robloxcodingtoolkit && node robloxcodingtoolkit/tools/rbxkit.mjs init MeuJogo
-
-cd MeuJogo
-rokit install        # instala rojo, selene, stylua, luau-lsp
-rojo serve           # deixe rodando
+npx github:gustavopiumbini/robloxcodingtoolkit init MyGame
+cd MyGame
+rokit install     # rojo, selene, stylua, luau-lsp
+rojo serve        # keep it running
 ```
 
-No Studio: instale o [plugin do Rojo](https://rojo.space/docs/v7/getting-started/installation/), abra um place e clique em **Connect**. O código de `src/` aparece no Studio e é atualizado a cada mudança.
+In Studio, install the [Rojo plugin](https://rojo.space/docs/v7/getting-started/installation/), open a place and click **Connect**. Everything in `src/` now syncs live.
 
-### 2. Conectar o agente ao Studio (MCP)
+### 2. Talk to your agent
 
-No Studio: **Assistant → ⋯ → Manage MCP Servers → Enable Studio as MCP server**, depois em **Quick connect** ligue **Claude Code** e/ou **Codex CLI** e reinicie o agente.
+```bash
+claude    # or: codex
+```
 
-Configuração manual (ou `node tools/rbxkit.mjs mcp` para ver tudo):
+> *Use the roblox-feature skill and add a pet system: pets follow the player and boost coins.*
+>
+> *Build a cozy medieval tavern next to spawn, with an interior, and review it with screenshots.*
+>
+> *Add a VIP Game Pass that doubles coins.*
+>
+> */roblox-review — audit the project before I publish.*
+>
+> *My game throws `attempt to index nil with 'Humanoid'`.*
+
+In Claude Code every skill is also a slash command (`/roblox-feature`, `/roblox-3d-building`, …). In Codex, mention the skill by name or use `$roblox-feature`.
+
+### Existing project
+
+```bash
+npx github:gustavopiumbini/robloxcodingtoolkit install path/to/your/game
+```
+
+Adds skills to `.claude/skills/` (Claude Code) and `.agents/skills/` (Codex), plus `AGENTS.md`, `CLAUDE.md` and `tools/rbxkit.mjs`. Existing `AGENTS.md`/`CLAUDE.md` are kept unless you pass `--force`. Skills assume the template's Rojo layout; adjust the *Map* section of `AGENTS.md` if yours differs. No Node? Copy `skills/*` and `agent/*.md` by hand.
+
+---
+
+## 🔌 Connect Roblox Studio
+
+Studio ships a built-in MCP server. In Studio: **Assistant → ⋯ → Manage MCP Servers → Enable Studio as MCP server**, then under **Quick connect** turn on **Claude Code** and/or **Codex CLI** and restart the agent.
+
+Manual setup (or run `node tools/rbxkit.mjs mcp`):
 
 ```bash
 # Windows
@@ -83,96 +104,183 @@ claude mcp add Roblox_Studio -- /Applications/RobloxStudio.app/Contents/MacOS/St
 codex  mcp add Roblox_Studio -- /Applications/RobloxStudio.app/Contents/MacOS/StudioMCP
 ```
 
-Com o MCP o agente consegue apertar Play, ler o Output, executar Luau, simular input e tirar screenshots — ou seja, testar o que escreveu. O MCP pode ler e modificar o place aberto: conecte só clientes confiáveis.
+> [!IMPORTANT]
+> MCP clients can read **and modify** the open place. Connect trusted clients only, and save your place before big changes.
 
-Para salvar dados no Studio, ative **Game Settings → Security → Enable Studio Access to API Services** (sem isso o `DataService` guarda os dados só em memória).
+To persist player data while testing, enable **Game Settings → Security → Enable Studio Access to API Services** (otherwise `DataService` keeps data in memory).
 
-### 3. Vibe coding
+---
 
-```bash
-claude      # ou: codex
+## 📦 What's inside
+
+<p align="center">
+  <img src="docs/assets/architecture.svg" alt="Architecture: agent edits files, Rojo syncs to Studio, Studio MCP verifies" width="100%">
+</p>
+
+| Delivery area | Contents |
+|---|---|
+| **Skills** (`skills/`) | 26 portable `SKILL.md` skills — loaded on demand, so they cost nothing until needed |
+| **Game template** (`template/`) | Rojo project with server/client bootstraps (`Init` → `Start`), session-locked `DataService`, `Net` + `Guard` + `RateLimiter` secure remotes, `Signal`, `Trove`, example shop + HUD |
+| **3D DevTools** (`template/src/dev/`) | `Build` (walls with openings, stairs, palettes, z-fighting audit, undo) and `Shots` (camera framing for screenshot reviews) |
+| **Agent rules** (`agent/`) | Lean `AGENTS.md` (Codex & others) and `CLAUDE.md` (Claude Code) with non-negotiables and token-economy rules |
+| **CLI** (`tools/rbxkit.mjs`) | Zero-dependency: `init`, `install`, `new`, Roblox lint (`check`), official docs lookup (`docs`), `mcp`, `doctor` |
+| **Verification** (`.github/workflows/ci.yml`) | `rojo build`, **luau-lsp strict type check against the Roblox API**, Selene, Lune unit tests, CLI tests, token budget test |
+
+### Skills
+
+<table>
+<tr><th>Workflow</th><th>Code & systems</th><th>World & feel</th><th>Platform</th></tr>
+<tr valign="top">
+<td>
+
+`roblox-feature`<br>
+`roblox-review`<br>
+`roblox-debug`<br>
+`roblox-docs`<br>
+`roblox-studio-mcp`<br>
+`roblox-testing`
+
+</td>
+<td>
+
+`roblox-luau`<br>
+`roblox-architecture`<br>
+`roblox-networking`<br>
+`roblox-datastore`<br>
+`roblox-gameplay`<br>
+`roblox-performance`<br>
+`roblox-physics`<br>
+`roblox-npc-ai`
+
+</td>
+<td>
+
+`roblox-3d-building`<br>
+`roblox-world-building`<br>
+`roblox-ui`<br>
+`roblox-input`<br>
+`roblox-characters-animation`<br>
+`roblox-audio`
+
+</td>
+<td>
+
+`roblox-monetization`<br>
+`roblox-text-chat`<br>
+`roblox-teleport-matchmaking`<br>
+`roblox-open-cloud`<br>
+`roblox-tooling`<br>
+`roblox-creator-store-security-audit`
+
+</td>
+</tr>
+</table>
+
+Eleven skills come from [EL4CTEO/roblox-skills](https://github.com/EL4CTEO/roblox-skills) and one from [AshExplained/roblox-skills](https://github.com/AshExplained/roblox-skills) (MIT) — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Also worth a look: Roblox's official [roblox-studio-agent-plugin](https://github.com/Roblox/roblox-studio-agent-plugin) and [nonlooped/roblox-suite](https://github.com/nonlooped/roblox-suite).
+
+---
+
+## 🧱 3D building that looks good
+
+<p align="center">
+  <img src="docs/assets/build-loop.svg" alt="Plan. Block out. Detail. Review." width="100%">
+</p>
+
+Agent-made builds usually look like "blocks placed by a bot": wrong scale, flat walls, random colors, flickering faces. The `roblox-3d-building` skill fixes that with a craft process and hard checks:
+
+- **Correct scale** — avatar-relative reference (doors 4×7.5, ceilings 12–14, steps rise 1 / run 1.5, jump distances).
+- **The right technique per shape** — parts for architecture, `generate_mesh`/vetted assets for organic shapes, MaterialVariants for custom surfaces, Terrain for landscapes.
+- **Craft rules** — silhouette first, break flat surfaces (trims, insets, overhangs), one cohesive palette, 2–4 materials, deliberate lighting.
+- **Automatic audit** — `Build.audit` finds z-fighting, tiny parts, unanchored parts and palette noise as cheap text, *before* spending tokens on screenshots.
+- **Visual review loop** — `Shots.frame(model, "iso" | "front" | "close")` + `screen_capture`, scored on a 7-point rubric until every item is ≥ 4/5 (max 3 iterations).
+
+```lua
+local B = require(game:GetService("ServerStorage").DevTools.Build)
+B.undoable("Cottage", function()                     -- one Ctrl+Z undoes the whole build
+	local m = B.model("Cottage", workspace)          -- re-runnable: replaces the previous version
+	B.wall(m, { from = Vector3.new(-12, 1, -9), to = Vector3.new(12, 1, -9), height = 12,
+		color = B.palettes.cottage.wall, material = Enum.Material.Plaster, trim = B.palettes.cottage.trim,
+		openings = { { offset = 12, width = 4, height = 7.5 }, { offset = 5, width = 4, height = 4, bottom = 3 } } })
+	B.finalize(m)
+end)
+return B.summary(B.audit(workspace.Cottage))         -- "parts=13 meshParts=0 unanchored=0 ..."
 ```
 
-Exemplos de pedidos:
+---
 
-- "Use a skill roblox-feature e crie um sistema de pets que seguem o jogador e dão bônus de moedas"
-- "Faz um obby com 10 estágios e checkpoints salvos"
-- "Adiciona um Game Pass VIP que dá o dobro de moedas"
-- "/roblox-review — revise o projeto antes de eu publicar"
-- "Meu jogo dá esse erro: `attempt to index nil with 'Humanoid'`"
+## 🪙 Built to save tokens (without losing quality)
 
-No Claude Code as skills também viram comandos: `/roblox-feature`, `/roblox-review`, etc. No Codex, cite a skill pelo nome ou use `$roblox-feature`.
+| Technique | Effect |
+|---|---|
+| Skills load on demand; only names + one-line descriptions are always in context | ~2.2k tokens per session for 26 skills + rules |
+| Lean `AGENTS.md` (no duplicated skill table) + English everywhere | −38% always-loaded context vs. the first version |
+| Progressive disclosure: deep recipes live in `references/` | Large tables load only for the exact case |
+| `rbxkit docs --api Class:Member` returns just one member from the official docs | A few hundred tokens instead of multi-thousand-token class pages — and no hallucinated APIs |
+| DevTools `Build`/`Shots` | One `B.wall{}` call instead of dozens of `Instance.new` lines; text audits before screenshots |
+| A token-budget test in CI | Prevents skills and rules from silently growing |
 
-### Projeto que já existe
+---
 
-```bash
-npx github:gustavopiumbini/robloxcodingtoolkit install caminho/do/projeto
-```
+## 🛠 The `rbxkit` CLI
 
-Copia as skills para `.claude/skills/` (Claude Code) e `.agents/skills/` (Codex), `AGENTS.md`, `CLAUDE.md` (sem sobrescrever os seus, a menos que use `--force`) e `tools/rbxkit.mjs`. As skills assumem a estrutura Rojo do template; se seu projeto for diferente, ajuste o "Mapa do projeto" no `AGENTS.md`. Os módulos de `template/src/shared/` podem ser copiados à mão.
-
-Sem Node? Copie `skills/*` para `.claude/skills/` e/ou `.agents/skills/` e `agent/AGENTS.md` + `agent/CLAUDE.md` para a raiz do projeto.
-
-## CLI `rbxkit`
-
-Dentro de um projeto, rode `node tools/rbxkit.mjs <comando>`:
+Inside a project: `node tools/rbxkit.mjs <command>`
 
 ```text
-init <pasta> [--name Nome]          cria um jogo novo
-install [pasta] [--force]           instala skills/AGENTS.md num projeto existente
-new service <Nome>                  src/server/Services/<Nome>Service.luau
-new controller <Nome>               src/client/Controllers/<Nome>Controller.luau
-new module <Pasta/Nome>             src/shared/<Pasta>/<Nome>.luau
-check [caminhos] [--json] [--strict] [--quiet]
-docs "<pergunta em inglês>"         busca na documentação oficial da Roblox
-docs --api Classe[:membro]          referência de API (TweenService:Create, task.wait, CFrame.new)
-docs --deprecated <Nome>            está depreciado? qual o substituto?
+init <dir> [--name Name]            create a new game
+install [dir] [--force]             add skills/AGENTS.md to an existing project
+new service|controller|module <Name>
+check [paths] [--json] [--strict]   Roblox lint (exit 1 on errors)
+docs "<question in English>"        search the official Roblox docs
+docs --api Class[:member]           API reference (TweenService:Create, task.wait, CFrame.new)
+docs --deprecated <Name>            deprecated? what replaces it?
 mcp [--client claude|codex] [--os windows|mac] [--write]
-doctor                              confere rojo/selene/stylua/claude/codex instalados
+doctor                              check rojo/selene/stylua/claude/codex
 ```
 
-### `rbxkit check` — lint de Roblox
+### `rbxkit check` — Roblox-aware lint
 
-Complementa o Selene com regras específicas de Roblox, pensadas para pegar os erros que agentes (e humanos) mais cometem:
-
-| Severidade | Regras |
+| Severity | Catches |
 |---|---|
-| erro | `wait`/`spawn`/`delay` depreciados, `:connect` minúsculo, `loadstring`, `require(assetId)` (backdoor), `InvokeClient`, `LocalPlayer` no servidor, `DataStoreService`/`ServerStorage` no cliente, `RenderStepped` no servidor, `while true` sem yield |
-| aviso | handler de remote sem validação, `Instance.new(classe, parent)`, `FireServer(player, …)`, `SetPrimaryPartCFrame`, `Humanoid:LoadAnimation`, Body movers, `FindPartOnRay`, `getfenv`/`setfenv`, DataStore sem `pcall` |
-| info | `SetAsync` (prefira `UpdateAsync`), `game.Players` sem `GetService`, `unpack` global, falta de `--!strict` |
+| **error** | `wait`/`spawn`/`delay`, `:connect`, `loadstring`, `require(assetId)` backdoors, `InvokeClient`, `LocalPlayer` on the server, server-only services on the client, `RenderStepped` on the server, yield-less `while true` |
+| **warning** | Remote handlers without validation, `Instance.new(class, parent)`, `FireServer(player, …)`, `SetPrimaryPartCFrame`, `Humanoid:LoadAnimation`, BodyMovers, `FindPartOnRay`, `getfenv`/`setfenv`, DataStore calls without `pcall` |
+| **info** | `SetAsync` (prefer `UpdateAsync`), `game.Players` without `GetService`, global `unpack`, missing `--!strict` |
 
-Silencie com `-- rbxkit-ignore: regra` na linha ou `-- rbxkit-ignore-next-line` na linha anterior. Sai com código 1 se houver erros (`--strict` inclui avisos), então dá para usar em CI ou em um hook.
+Silence a line with `-- rbxkit-ignore: rule`, or the next one with `-- rbxkit-ignore-next-line`.
 
-## Estrutura do template
+---
+
+## 🗂 Template layout
 
 ```text
 src/
-  server/                     -> ServerScriptService.Server
-    init.server.luau          bootstrap: require de Services/, Init() e Start()
-    Config/DataTemplate.luau  formato dos dados salvos
-    Services/
-      DataService.luau        DataStore com UpdateAsync, session lock, retries, autosave
-      CoinService.luau        moedas + leaderstats + Attribute para a HUD
-      ShopService.luau        exemplo de remote seguro (Net + Guard)
-  client/                     -> StarterPlayerScripts.Client
-    init.client.luau          bootstrap de Controllers/
+  server/                     → ServerScriptService.Server
+    init.server.luau            bootstrap: require Services/, Init() then Start()
+    Config/DataTemplate.luau    saved data shape
+    Services/                   DataService · CoinService · ShopService
+  client/                     → StarterPlayerScripts.Client
+    init.client.luau            bootstrap for Controllers/
     Controllers/HudController.luau
-  shared/                     -> ReplicatedStorage.Shared
-    Net.luau                  remotes nomeados com validação e rate limit
+  shared/                     → ReplicatedStorage.Shared
+    Net.luau                    named remotes with validation + rate limits
     Config/Items.luau
-    Util/Guard.luau  Util/RateLimiter.luau  Util/Signal.luau  Util/Trove.luau
+    Util/                       Guard · RateLimiter · Signal · Trove
+  dev/                        → ServerStorage.DevTools (Studio-only tooling)
+    Build.luau · Shots.luau
 ```
 
-## Desenvolvendo o toolkit
+---
+
+## 🧪 Developing the toolkit
 
 ```bash
-npm test                                   # testes da CLI e das skills (node:test)
-npm run check:template                     # o template precisa passar no próprio lint
-lune run tests/luau/utils.spec.luau        # testes dos módulos Luau (https://lune-org.github.io)
+npm test                                  # CLI, skills and token budget (node:test)
+npm run check:template                    # the template must pass its own lint
+lune run tests/luau/utils.spec.luau       # Guard, RateLimiter, Signal, Trove
+lune run tests/luau/build.spec.luau       # Build geometry + audit (Lune Roblox datatypes)
 ```
 
-O CI (`.github/workflows/ci.yml`) roda os três e o Selene no template.
+CI also runs `rojo build`, a strict `luau-lsp` type check against the Roblox API definitions, and Selene.
 
-## Licença
+## License
 
-MIT
+[MIT](LICENSE). Third-party skills keep their own MIT licenses — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
