@@ -1,5 +1,5 @@
-# Toolchain gerenciada pelo Rokit (https://github.com/rojo-rbx/rokit)
-# Instale tudo com: rokit install
+# Toolchain managed by Rokit (https://github.com/rojo-rbx/rokit)
+# Install everything with: rokit install
 [tools]
 rojo = "rojo-rbx/rojo@7.7.1"
 selene = "Kampfkarren/selene@0.32.0"
