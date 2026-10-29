@@ -153,5 +153,5 @@ Open Cloud Luau Execution flow (details and a script: [references/cloud-test-run
 
 ## Related skills
 
-`roblox-tooling` (CI, Rojo), `roblox-studio-mcp` (agent-driven playtests), `roblox-open-cloud`,
+`roblox-studio-mcp` (agent-driven playtests), `roblox-open-cloud`,
 `roblox-review`.

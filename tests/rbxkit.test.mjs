@@ -138,3 +138,18 @@ test("README: local links/images exist and one-prompt URLs point to real files",
 	assert.ok(raw.length >= 2);
 	for (const file of raw) assert.ok(fs.existsSync(path.join(ROOT, file)), `one-prompt file missing: ${file}`);
 });
+
+test("skill cross-references point to existing skills", () => {
+	const dirs = ["skills", "agent", "docs/prompts"].map((d) => path.join(ROOT, d));
+	const texts = [];
+	const walk = (d) => {
+		for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+			const full = path.join(d, e.name);
+			if (e.isDirectory()) walk(full);
+			else if (e.name.endsWith(".md")) texts.push(fs.readFileSync(full, "utf8"));
+		}
+	};
+	dirs.forEach(walk);
+	const refs = new Set(texts.flatMap((t) => [...t.matchAll(/`(roblox-[a-z0-9-]+)`/g)].map((m) => m[1])));
+	for (const ref of refs) assert.ok(fs.existsSync(path.join(ROOT, "skills", ref)), `broken skill reference: ${ref}`);
+});

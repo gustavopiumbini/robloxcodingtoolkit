@@ -131,5 +131,5 @@ Verification details and a Node/Python verifier: [references/webhooks.md](refere
 
 ## Related skills
 
-`roblox-datastore` (budgets, schema), `roblox-tooling` (CI publishing), `roblox-testing` (Luau
+`roblox-datastore` (budgets, schema), `roblox-testing` (Luau
 execution tests), `roblox-networking` (bans, secrets).
